@@ -2,7 +2,7 @@
 module Main
 open System
 open FParsec
-open SimpleSql
+open ProtoSql
 
 let test p str =
     match run p str with
@@ -11,7 +11,7 @@ let test p str =
 
 [<EntryPoint>]
 let main args =
-    test simpleSqlParser "GETDATE()"
+    test parser "foo(bar(5, -42.01, 'rawr'), 1)"
 
     Console.ReadLine() |> ignore
     0
