@@ -39,8 +39,10 @@
     <None Include="packages.config" />
     <None Include="app.config" />
     <Compile Include="Parsing.fs" />
+    <Compile Include="Basic.fs" />
     <Compile Include="JSON.fs" />
-    <Compile Include="SimpleSql.fs" />
+    <Compile Include="ProtoSqlValue.fs" />
+    <Compile Include="ProtoSql.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
