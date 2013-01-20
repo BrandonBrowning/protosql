@@ -39,11 +39,10 @@
     <None Include="packages.config" />
     <None Include="app.config" />
     <Compile Include="Parsing.fs" />
-    <Compile Include="Basic.fs" />
-    <Compile Include="JSON.fs" />
-    <Compile Include="ProtoSqlValue.fs" />
     <Compile Include="ProtoSql.fs" />
+    <Compile Include="ProtoSqlParser.fs" />
     <Compile Include="Main.fs" />
+    <Content Include="SimpleSql-Grammar.txt" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">
