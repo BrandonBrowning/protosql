@@ -6,7 +6,7 @@ open ProtoSqlParser
 
 [<EntryPoint>]
 let main args =
-    let result = run protoSqlParser  "foo(3, 1, a)"
+    let result = run protoSqlParser @"{ foo = bar(baz); booze = bajangles }"
 
     match result with
         | Success(result, _, _)   -> printfn "Success: %A" result

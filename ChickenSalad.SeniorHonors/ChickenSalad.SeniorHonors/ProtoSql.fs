@@ -10,8 +10,7 @@ type ProtoSql =
 and Dataset = Table // TODO: Make this allow dataset-valued expressions
 
 and Where = WhereID of WhereID | WhereValueExpr of ValueExpr
-and WhereID = Primative | Tuple
-and Tuple = ValueExpr list
+and WhereID = WhereIDSimple of Primative | WhereIDComposite of ValueExpr list
 
 and OrderBy = OrderByColumn list
 and OrderByColumn = OrderByColumnType * Column
