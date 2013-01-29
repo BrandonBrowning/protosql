@@ -5,7 +5,7 @@ open FParsec
 open Parsing
 
 type ProtoSql = 
-    Query of From * Where option * OrderBy option * Select option
+    Query of From * Where list option * OrderBy option * Select option
 
 and From = Dataset
 and Dataset = Table // TODO: Make this allow dataset-valued expressions

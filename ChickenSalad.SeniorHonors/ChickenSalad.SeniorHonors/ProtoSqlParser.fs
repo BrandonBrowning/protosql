@@ -55,10 +55,11 @@ let parseWhereID =
         (parseNumber <|> parseString) |>> WhereIDSimple;
     ]
 
-let parseWhere = chr '?' >>. choice [
+let parseWhere = 
+    chr '?' >>. choice [
         parseWhereID |>> WhereID
         parseValueExpr |>> WhereValueExpr
-    ]
+    ] |> many1
 
 let parseEscapeBlock = chr '[' >>. many1Satisfy ((<>) ']') .>> chr ']'
 let parsePiece = parseRawIdentifier <|> parseEscapeBlock

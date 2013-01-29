@@ -25,17 +25,19 @@ let translateTableOrColumn (a, b, c) =
 
 let translateFrom (a, b, c) = "FROM " + translateTableOrColumn (a, b, c)
 
-let translateWhere where = 
-    "WHERE " + (
+// TODO: Add connecting to database and finding ID
+let translateWhere wheres = 
+    let translateWhereLine where = 
         match where with
             | WhereID(whereID) -> 
                 match whereID with
-                    | WhereIDSimple(prim) -> translatePrimative prim
+                    | WhereIDSimple(prim) -> "*ID* = " + translatePrimative prim
                     | WhereIDComposite(exprs) -> 
                         let pieceList = String.Join(", ", List.map translateExpr exprs)
-                        sprintf "(%s)" pieceList
+                        sprintf "*ID* = (%s)" pieceList
             | WhereValueExpr(expr) -> translateExpr expr
-    )
+
+    "WHERE " + String.Join(" AND ", List.map translateWhereLine wheres)
 
 let translateSelect select =
     let translateSelectLine = function
@@ -73,7 +75,7 @@ let translate = function
 
 [<EntryPoint>]
 let main args =
-    let query = "customer.AccountPolicyCoverage?has(StartDate)\\EndDate{duration=between(day, StartDate, EndDate)}"
+    let query = "customer.AccountPolicyCoverage?4?has(StartDate)\\EndDate{duration=between(day, StartDate, EndDate)}"
     let result = run protoSqlParser query
 
     printn query
