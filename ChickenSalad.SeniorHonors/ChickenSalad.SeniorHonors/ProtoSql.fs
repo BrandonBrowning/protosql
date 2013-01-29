@@ -5,8 +5,9 @@ open FParsec
 open Parsing
 
 type ProtoSql = 
-    Query of Dataset * Where option * OrderBy option * Select option
+    Query of From * Where option * OrderBy option * Select option
 
+and From = Dataset
 and Dataset = Table // TODO: Make this allow dataset-valued expressions
 
 and Where = WhereID of WhereID | WhereValueExpr of ValueExpr
@@ -20,10 +21,10 @@ and Select = SelectLine list
 and SelectLine = SelectLineColumn of Column | SelectLineExpr of string * ValueExpr
 
 and ValueExpr = ValueExprPrimative of Primative | ValueExprFCall of FCall
-and FCall = FCall of string * ValueExpr list
+and FCall = string * ValueExpr list
 
-and Table = Table of string * string * string
-and Column = Column of string * string * string
+and Table = string * string * string
+and Column = string * string * string
 
 and Primative =
     | PrimativeInt of int

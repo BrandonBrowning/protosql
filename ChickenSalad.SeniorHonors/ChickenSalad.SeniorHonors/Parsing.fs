@@ -16,3 +16,5 @@ let seperate sep p = sepBy p sep
 let betweenChr cOpen cClose p = between (chr cOpen) (chr cClose) p
 let betweenStr sOpen sClose p = between (str sOpen) (str sClose) p
 let csv p = sepBy (p .>> spaces) (str "," .>> spaces)
+
+let printn (str: string) = printfn "%s" str

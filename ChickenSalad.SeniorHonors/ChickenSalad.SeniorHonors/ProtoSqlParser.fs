@@ -40,7 +40,7 @@ parseValueExprRef := (
     parsePrimative .>>. (opt funcCall)
         |>> fun (prim, args) -> match prim with
             | PrimativeLiteral(str) -> match args with
-                | Some(args) -> ValueExprFCall (FCall(str, args))
+                | Some(args) -> ValueExprFCall (str, args)
                 | _ -> ValueExprPrimative prim
             | _ -> ValueExprPrimative prim)
 
@@ -63,29 +63,30 @@ let parseWhere = chr '?' >>. choice [
 let parseEscapeBlock = chr '[' >>. many1Satisfy ((<>) ']') .>> chr ']'
 let parsePiece = parseRawIdentifier <|> parseEscapeBlock
 let parseThreePiece = sepBy1 parsePiece  (chr '.') |>> 
-    fun pieces ->
-        match pieces.Length with
+        fun pieces -> match pieces.Length with
             | 3 -> (pieces.[0], pieces.[1], pieces.[2])
             | 2 -> ("", pieces.[0], pieces.[1])
             | 1 -> ("", "", pieces.[0])
             | _ -> ("", "", "")
 
-let parseTable = parseThreePiece |>> Table
-let parseColumn = parseThreePiece |>> Column
+let parseTable = parseThreePiece
+let parseColumn = parseThreePiece
 
 let parseOrderByColumnType = (charReturn '/' Ascending) <|> (charReturn '\\' Descending)
 let parseOrderByColumn = parseOrderByColumnType .>>. parseColumn
-let parseOrderBy = parseOrderByColumn |> many
+let parseOrderBy = parseOrderByColumn |> many1
 
 let parseSelectLineExpr = (parseRawIdentifier .>> (spaces .>> chr '=' .>> spaces)) .>>. parseValueExpr
 let parseSelectLine = 
     choice [
-        parseSelectLineExpr |>> SelectLineExpr
+        (attempt parseSelectLineExpr) |>> SelectLineExpr
         parseColumn |>> SelectLineColumn
     ]
 
-let parseSelect: Parser<Select> = sepBy1 parseSelectLine ((skipNewline <|> skipChar ';') .>> spaces) |> between (chr '{' .>> spaces) (spaces >>. chr '}')
+let parseSelect: Parser<Select> = 
+    sepBy1 parseSelectLine ((skipNewline <|> skipChar ';') .>> spaces) 
+        |> between (chr '{' .>> spaces) (spaces >>. chr '}')
 
-let queryExceptDataset where orderby select = Query (("", "dbo", "foo") |> Table, where, orderby, Option.Some select)
+let parseFrom = parseTable
 
-protoSqlParserRef := parseSelect
+protoSqlParserRef := tuple4 parseFrom (opt parseWhere) (opt parseOrderBy) (opt parseSelect) |>> Query
