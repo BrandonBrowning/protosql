@@ -38,9 +38,11 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="app.config" />
-    <Compile Include="Parsing.fs" />
-    <Compile Include="ProtoSql.fs" />
-    <Compile Include="ProtoSqlParser.fs" />
+    <Compile Include="Common.fs" />
+    <Compile Include="Grammar.fs" />
+    <Compile Include="Parse.fs" />
+    <Compile Include="Cross.fs" />
+    <Compile Include="Optimize.fs" />
     <Compile Include="Main.fs" />
     <Content Include="SimpleSql-Grammar.txt" />
     <None Include="join-rules.json">

@@ -1,9 +1,10 @@
 ﻿
-module ProtoSqlParser
+module Parse
+
 open System
+open Common
 open FParsec
-open Parsing
-open ProtoSql
+open Grammar
 
 type Parser = Parser<ProtoSql, unit>
 

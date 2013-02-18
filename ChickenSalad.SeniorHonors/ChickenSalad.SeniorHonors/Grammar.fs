@@ -1,8 +1,9 @@
 ﻿
-module ProtoSql
+module Grammar
+
 open System
+open Common
 open FParsec
-open Parsing
 
 type ProtoSql = 
     Query of From * Where list option * OrderBy option * Select option
