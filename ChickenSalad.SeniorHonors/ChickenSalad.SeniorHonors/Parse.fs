@@ -99,7 +99,7 @@ let parseTable = parseThreePiece
 let parseColumn = parseThreePiece
 
 let parseOrderByColumnType = (charReturn '/' Ascending) <|> (charReturn '\\' Descending)
-let parseOrderBy: Parser<OrderBy> = parseOrderByColumnType .>>. parseColumn
+let parseOrderBy = parseOrderByColumnType .>>. parseColumn
 let parseOrderBys = parseOrderBy |> many |> attempt
 
 let parseSelectExpr = (parseRawIdentifier .>> (spaces .>> chr '=' .>> spaces)) .>>. parseValueExpr
