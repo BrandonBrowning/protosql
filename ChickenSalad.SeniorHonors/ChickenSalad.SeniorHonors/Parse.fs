@@ -84,7 +84,7 @@ let parseWheres =
     chr '?' >>. choice [
         parseWhereID |>> WhereID
         parseValueExpr |>> WhereExpr
-    ] |> many
+    ] |> many |> attempt
 
 let parseEscapeBlock = chr '[' >>. many1Satisfy ((<>) ']') .>> chr ']'
 let parsePiece = parseRawIdentifier <|> parseEscapeBlock
@@ -100,7 +100,7 @@ let parseColumn = parseThreePiece
 
 let parseOrderByColumnType = (charReturn '/' Ascending) <|> (charReturn '\\' Descending)
 let parseOrderBy: Parser<OrderBy> = parseOrderByColumnType .>>. parseColumn
-let parseOrderBys = parseOrderBy |> many
+let parseOrderBys = parseOrderBy |> many |> attempt
 
 let parseSelectExpr = (parseRawIdentifier .>> (spaces .>> chr '=' .>> spaces)) .>>. parseValueExpr
 let parseSelect =
@@ -112,6 +112,7 @@ let parseSelect =
 let parseSelects = 
     sepBy parseSelect ((skipNewline <|> skipChar ';') .>> spaces) 
         |> between (chr '{' .>> spaces) (spaces >>. chr '}')
+        |> attempt
 
 let parseFrom = parseTable
 protoSqlParserRef := tuple4 parseFrom parseWheres parseOrderBys parseSelects

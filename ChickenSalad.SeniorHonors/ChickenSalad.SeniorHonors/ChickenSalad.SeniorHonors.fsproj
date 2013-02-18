@@ -43,6 +43,7 @@
     <Compile Include="Parse.fs" />
     <Compile Include="Cross.fs" />
     <Compile Include="Optimize.fs" />
+    <Compile Include="Test.fs" />
     <Compile Include="Main.fs" />
     <Content Include="SimpleSql-Grammar.txt" />
     <None Include="join-rules.json">

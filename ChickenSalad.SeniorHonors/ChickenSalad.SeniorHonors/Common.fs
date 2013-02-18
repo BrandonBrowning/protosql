@@ -20,3 +20,4 @@ let csv p = sepBy (p .>> spaces) (str "," .>> spaces)
 
 let id x = x
 let printn (str: string) = printfn "%s" str
+let eprintn (str: string) = eprintfn "%s" str
