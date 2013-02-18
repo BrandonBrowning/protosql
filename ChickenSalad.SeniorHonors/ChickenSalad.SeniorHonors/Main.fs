@@ -40,7 +40,7 @@ let protoSqlWithOps = opp.ExpressionParser
 
 [<EntryPoint>]
 let main args =
-    let query = "table.name?gt(StartDate,getdate())/StartDate{foo=bar;baz=3+1}" // @"customer.Account?gt(StartDate,'2012-05-16'){EmploymentLength=datediff(getdate(), StartDate); Foo=bar+1}"
+    let query = "table.name?gt(StartDate,getdate())/StartDate{foo=bar;baz=5.5/3}" // @"customer.Account?gt(StartDate,'2012-05-16'){EmploymentLength=datediff(getdate(), StartDate); Foo=bar+1}"
     let parser = parseValueExpr
 
     let result = run protoSqlParser query

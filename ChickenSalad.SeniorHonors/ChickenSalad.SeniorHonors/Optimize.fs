@@ -1,6 +1,8 @@
 ﻿
 module Optimize
 
+open System
+open System.Text
 open Grammar
 
 let isOptimizableOperator ident =
@@ -8,14 +10,56 @@ let isOptimizableOperator ident =
         | "+" | "-" | "*" | "/" -> true
         | _ -> false
 
+let duplicateString n (str: string) =
+    let builder = new StringBuilder()
+
+    for i = 1 to n do
+        builder.Append(str) |> ignore
+
+    builder.ToString()
+
 let optimizedAdd leftPrim rightPrim =
     match (leftPrim, rightPrim) with
         | (PrimativeInt left, PrimativeInt right) -> left + right |> PrimativeInt |> Some
         | (PrimativeFloat left, PrimativeFloat right) -> left + right |> PrimativeFloat |> Some
-        | (PrimativeString left, PrimativeLiteral right) -> left + right |> PrimativeString |> Some
+        | (PrimativeString left, PrimativeString right) -> left + right |> PrimativeString |> Some
         | (PrimativeInt left, PrimativeFloat right) -> float left + right |> PrimativeFloat |> Some
         | (PrimativeFloat left, PrimativeInt right) -> left + float right |> PrimativeFloat |> Some
         | _ -> None
+
+let optimizedSub leftPrim rightPrim =
+    match (leftPrim, rightPrim) with
+        | (PrimativeInt left, PrimativeInt right) -> left - right |> PrimativeInt |> Some
+        | (PrimativeFloat left, PrimativeFloat right) -> left - right |> PrimativeFloat |> Some
+        | (PrimativeInt left, PrimativeFloat right) -> float left - right |> PrimativeFloat |> Some
+        | (PrimativeFloat left, PrimativeInt right) -> left - float right |> PrimativeFloat |> Some
+        | _ -> None
+
+let optimizedMul leftPrim rightPrim =
+    match (leftPrim, rightPrim) with
+        | (PrimativeInt left, PrimativeInt right) -> left * right |> PrimativeInt |> Some
+        | (PrimativeFloat left, PrimativeFloat right) -> left * right |> PrimativeFloat |> Some
+        | (PrimativeString left, PrimativeInt right) -> duplicateString right left |> PrimativeString |> Some
+        | (PrimativeInt left, PrimativeString right) -> duplicateString left right |> PrimativeString |> Some
+        | (PrimativeInt left, PrimativeFloat right) -> float left * right |> PrimativeFloat |> Some
+        | (PrimativeFloat left, PrimativeInt right) -> left * float right |> PrimativeFloat |> Some
+        | _ -> None
+
+let optimizedDiv leftPrim rightPrim =
+    match (leftPrim, rightPrim) with
+        | (PrimativeInt left, PrimativeInt right) -> left / right |> PrimativeInt |> Some
+        | (PrimativeFloat left, PrimativeFloat right) -> left / right |> PrimativeFloat |> Some
+        | (PrimativeInt left, PrimativeFloat right) -> float left / right |> PrimativeFloat |> Some
+        | (PrimativeFloat left, PrimativeInt right) -> left / float right |> PrimativeFloat |> Some
+        | _ -> None
+
+let getOptimizeOpFunc ident =
+    match ident with
+        | "+" -> optimizedAdd
+        | "-" -> optimizedSub
+        | "*" -> optimizedMul
+        | "/" -> optimizedDiv
+        | _ -> new ArgumentException("Could not match a function to the given argument") |> raise
 
 let rec optimizeValueExpr expr =
     match expr with
@@ -26,21 +70,24 @@ let rec optimizeValueExpr expr =
                 
                 match (optimizedLeft, optimizedRight) with
                     | (ValueExprPrimative leftPrim, ValueExprPrimative rightPrim) ->
-                        match ident with
-                            | "+" -> 
-                                let addResult = optimizedAdd leftPrim rightPrim
-                                if Option.isSome addResult then
-                                    Option.get addResult |> ValueExprPrimative
-                                else
-                                    ValueExprBinOp(ident, optimizedLeft, optimizedRight)
-                            | _ -> ValueExprBinOp(ident, optimizedLeft, optimizedRight)
+                        let optimizeFunc = getOptimizeOpFunc ident
+                        let result = optimizeFunc leftPrim rightPrim
+                        if Option.isSome result then
+                            Option.get result |> ValueExprPrimative
+                        else
+                            ValueExprBinOp(ident, optimizedLeft, optimizedRight)
                     | _ -> ValueExprBinOp(ident, optimizedLeft, optimizedRight)
             else
                 expr
         | _ -> expr
 
 let optimizeFrom = id
-let optimizeWhere = id
+
+let optimizeWhere line =
+    match line with
+        | WhereValueExpr valueExpr -> optimizeValueExpr valueExpr |> WhereValueExpr
+        | _ -> line
+
 let optimizeOrderBy = id
 
 let optimizeSelectLine line =
