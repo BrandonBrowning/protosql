@@ -43,6 +43,9 @@
     <Compile Include="ProtoSqlParser.fs" />
     <Compile Include="Main.fs" />
     <Content Include="SimpleSql-Grammar.txt" />
+    <None Include="join-rules.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">

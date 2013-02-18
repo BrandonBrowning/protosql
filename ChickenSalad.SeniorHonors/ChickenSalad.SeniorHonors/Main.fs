@@ -12,9 +12,21 @@ let translatePrimative = function
     | PrimativeString(s) -> sprintf "'%s'" s
     | PrimativeLiteral(s) -> s
 
+let isOperator = function
+    | ValueExprBinOp(_, _, _) -> true
+    | _ -> false
+
 let rec translateExpr = function
     | ValueExprPrimative(prim) -> translatePrimative prim
-    | ValueExprFCall(ident, args) -> 
+    | ValueExprBinOp(ident, left, right) ->
+        let leftExpr = translateExpr left
+        let leftDisplay = (if isOperator left then sprintf "(%s)" leftExpr else leftExpr)
+
+        let rightExpr = translateExpr right
+        let rightDisplay = (if isOperator right then sprintf "(%s)" rightExpr else rightExpr)
+
+        sprintf "%s %s %s" leftDisplay ident rightDisplay
+    | ValueExprFCall(ident, args) ->
         let argList = String.Join(", ", List.map translateExpr args)
         sprintf "%s(%s)" ident argList
 
@@ -66,23 +78,54 @@ let extractString f = extract f ""
 
 let translate = function
     | Query(f, wo, oo, so) -> 
-        [(extractString translateSelect so);
+        [(extract translateSelect "SELECT *" so);
         (translateFrom f);
         (extractString translateWhere wo);
         (extractString translateOrderBy oo)]
             |> Seq.filter (not << String.IsNullOrEmpty)
             |> fun parts -> String.Join(Environment.NewLine, parts)
 
+let opp = new OperatorPrecedenceParser<_,_,_>()
+
+let adjustPosition offset (pos: Position) =
+    Position(pos.StreamName, pos.Index + int64 offset,
+             pos.Line, pos.Column + int64 offset)
+
+// To simplify infix operator definitions, we define a helper function.
+let addInfixOperator str prec assoc mapping =
+    let op = InfixOperator(str, getPosition .>> spaces, prec, assoc, (),
+                           fun opPos leftTerm rightTerm ->
+                               mapping
+                                   (adjustPosition -str.Length opPos)
+                                   leftTerm rightTerm)
+    opp.AddOperator(op)
+
+// Of course, you can define similar functions for other operator types.
+
+// With the helper function in place, you can define an operator with
+// a mapping function that gets passed the text location of the
+// parsed operator as the first argument.
+addInfixOperator "+" 1 Associativity.Left (fun opPos leftTerm rightTerm -> ValueExprBinOp("+", leftTerm, rightTerm))
+addInfixOperator "-" 1 Associativity.Left (fun opPos leftTerm rightTerm -> ValueExprBinOp("-", leftTerm, rightTerm))
+addInfixOperator "*" 2 Associativity.Left (fun opPos leftTerm rightTerm -> ValueExprBinOp("*", leftTerm, rightTerm))
+addInfixOperator "/" 2 Associativity.Left (fun opPos leftTerm rightTerm -> ValueExprBinOp("/", leftTerm, rightTerm))
+
+opp.TermParser <- parseValueExpr
+
+let protoSqlWithOps = opp.ExpressionParser
+
 [<EntryPoint>]
 let main args =
-    let query = "customer.AccountPolicyCoverage?4?has(StartDate)\\EndDate{duration=between(day, StartDate, EndDate)}"
+    let query = "table.name?gt(StartDate,getdate())/StartDate{foo=bar;baz=StartDate+1}" // @"customer.Account?gt(StartDate,'2012-05-16'){EmploymentLength=datediff(getdate(), StartDate); Foo=bar+1}"
+    let parser = parseValueExpr
+
     let result = run protoSqlParser query
 
     printn query
     printn "---"
 
     match result with
-        | Success(result, _, _)   ->
+        | Success(result, _, _) ->
             printfn "Success: %A" result
             printn "---"
             printn <| translate result

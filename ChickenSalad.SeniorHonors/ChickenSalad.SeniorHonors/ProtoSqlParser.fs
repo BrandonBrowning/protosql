@@ -31,10 +31,26 @@ let parsePrimative =
         parseLiteral
     ]
 
-let parseValueExpr, parseValueExprRef = createParserForwardedToRef()
+let parseValueExprInternal, parseValueExprInternalRef = createParserForwardedToRef()
 
-parseValueExprRef := (
-    let argumentCsv = csv parseValueExpr
+let opp = new OperatorPrecedenceParser<_,_,_>()
+
+let adjustPosition offset (pos: Position) =
+    Position(pos.StreamName, pos.Index + int64 offset,
+             pos.Line, pos.Column + int64 offset)
+
+let addInfixOperator str prec assoc mapping =
+    let op = InfixOperator(str, getPosition .>> spaces, prec, assoc, (),
+                           fun opPos leftTerm rightTerm ->
+                               mapping
+                                   (adjustPosition -str.Length opPos)
+                                   leftTerm rightTerm)
+    opp.AddOperator(op)
+
+addInfixOperator "+" 1 Associativity.Left (fun opPos leftTerm rightTerm -> ValueExprBinOp("+", leftTerm, rightTerm))
+
+parseValueExprInternalRef := (
+    let argumentCsv = csv parseValueExprInternal
     let funcCall = betweenStr "(" ")" argumentCsv
 
     parsePrimative .>>. (opt funcCall)
@@ -42,7 +58,12 @@ parseValueExprRef := (
             | PrimativeLiteral(str) -> match args with
                 | Some(args) -> ValueExprFCall (str, args)
                 | _ -> ValueExprPrimative prim
-            | _ -> ValueExprPrimative prim)
+            | _ -> ValueExprPrimative prim
+    )
+
+opp.TermParser <- parseValueExprInternal
+
+let parseValueExpr = opp.ExpressionParser
 
 let parseWhereID =
     choice [

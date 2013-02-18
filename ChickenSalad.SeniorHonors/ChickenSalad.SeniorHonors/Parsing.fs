@@ -7,7 +7,7 @@ type Parser<'t> = Parser<'t, unit>
 let chr = pchar
 
 let str = pstring
-let str_ws s = str s >>. spaces
+let str_ws s = str s .>> spaces
 let ws_string s = spaces >>. str s
 
 /// `seperate sep p` is an alias for `sepBy p sep`, which parses parses p (sep p)*
