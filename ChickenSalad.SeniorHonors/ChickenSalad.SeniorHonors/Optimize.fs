@@ -85,24 +85,20 @@ let optimizeFrom = id
 
 let optimizeWhere line =
     match line with
-        | WhereValueExpr valueExpr -> optimizeValueExpr valueExpr |> WhereValueExpr
+        | WhereExpr valueExpr -> optimizeValueExpr valueExpr |> WhereExpr
         | _ -> line
 
 let optimizeOrderBy = id
 
-let optimizeSelectLine line =
+let optimizeSelect line =
     match line with
-        | SelectLineExpr(ident, valueExpr) -> SelectLineExpr(ident, optimizeValueExpr valueExpr)
+        | SelectExpr(ident, valueExpr) -> SelectExpr(ident, optimizeValueExpr valueExpr)
         | _ -> line
 
-let optimizeSelect = List.map optimizeSelectLine
+let optimize (from, wheres, orderBys, selects) = 
+    let optimizedFrom = optimizeFrom from
+    let optimizedWheres = List.map optimizeWhere wheres
+    let optimizedOrderBy = List.map optimizeOrderBy orderBys
+    let optimizedSelect = List.map optimizeSelect selects
 
-let optimize query = 
-    match query with
-        Query(from, wheres, orderBy, select) ->
-            let optimizedFrom = optimizeFrom from
-            let optimizedWheres = Option.bind (List.map optimizeWhere >> Option.Some) wheres
-            let optimizedOrderBy = Option.bind (optimizeOrderBy >> Option.Some) orderBy
-            let optimizedSelect = Option.bind (optimizeSelect >> Option.Some) select
-
-            Query(optimizedFrom, optimizedWheres, optimizedOrderBy, optimizedSelect)
+    (optimizedFrom, optimizedWheres, optimizedOrderBy, optimizedSelect)

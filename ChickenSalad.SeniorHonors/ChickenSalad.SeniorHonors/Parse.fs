@@ -8,7 +8,7 @@ open Grammar
 
 type Parser = Parser<ProtoSql, unit>
 
-let protoSqlParser, protoSqlParserRef = createParserForwardedToRef()
+let (protoSqlParser: Parser), protoSqlParserRef = createParserForwardedToRef()
 
 let parseRawIdentifier: Parser<string, unit> = many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c)
 let parseRawString = pchar ''' >>. manySatisfy (fun c -> c <> ''') .>> pchar '''
@@ -80,11 +80,11 @@ let parseWhereID =
         (parseNumber <|> parseString) |>> WhereIDSimple;
     ]
 
-let parseWhere = 
+let parseWheres = 
     chr '?' >>. choice [
         parseWhereID |>> WhereID
-        parseValueExpr |>> WhereValueExpr
-    ] |> many1
+        parseValueExpr |>> WhereExpr
+    ] |> many
 
 let parseEscapeBlock = chr '[' >>. many1Satisfy ((<>) ']') .>> chr ']'
 let parsePiece = parseRawIdentifier <|> parseEscapeBlock
@@ -99,20 +99,19 @@ let parseTable = parseThreePiece
 let parseColumn = parseThreePiece
 
 let parseOrderByColumnType = (charReturn '/' Ascending) <|> (charReturn '\\' Descending)
-let parseOrderByColumn = parseOrderByColumnType .>>. parseColumn
-let parseOrderBy = parseOrderByColumn |> many1
+let parseOrderBy: Parser<OrderBy> = parseOrderByColumnType .>>. parseColumn
+let parseOrderBys = parseOrderBy |> many
 
-let parseSelectLineExpr = (parseRawIdentifier .>> (spaces .>> chr '=' .>> spaces)) .>>. parseValueExpr
-let parseSelectLine = 
+let parseSelectExpr = (parseRawIdentifier .>> (spaces .>> chr '=' .>> spaces)) .>>. parseValueExpr
+let parseSelect =
     choice [
-        (attempt parseSelectLineExpr) |>> SelectLineExpr
-        parseColumn |>> SelectLineColumn
+        (attempt parseSelectExpr) |>> SelectExpr
+        parseColumn |>> SelectColumn
     ]
 
-let parseSelect: Parser<Select> = 
-    sepBy1 parseSelectLine ((skipNewline <|> skipChar ';') .>> spaces) 
+let parseSelects = 
+    sepBy parseSelect ((skipNewline <|> skipChar ';') .>> spaces) 
         |> between (chr '{' .>> spaces) (spaces >>. chr '}')
 
 let parseFrom = parseTable
-
-protoSqlParserRef := tuple4 parseFrom (opt parseWhere) (opt parseOrderBy) (opt parseSelect) |>> Query
+protoSqlParserRef := tuple4 parseFrom parseWheres parseOrderBys parseSelects

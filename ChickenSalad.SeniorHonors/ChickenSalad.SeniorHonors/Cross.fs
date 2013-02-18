@@ -45,40 +45,37 @@ let crossWhere wheres =
                     | WhereIDComposite(exprs) -> 
                         let pieceList = String.Join(", ", List.map crossExpr exprs)
                         sprintf "*ID* = (%s)" pieceList
-            | WhereValueExpr(expr) -> crossExpr expr
+            | WhereExpr(expr) -> crossExpr expr
 
     "WHERE " + String.Join(" AND ", List.map crossWhereLine wheres)
 
 let crossSelect select =
     let crossSelectLine = function
-        | SelectLineColumn(col) -> crossTableOrColumn col
-        | SelectLineExpr(ident, expr) -> crossExpr expr + " AS " + ident
+        | SelectColumn(col) -> crossTableOrColumn col
+        | SelectExpr(ident, expr) -> crossExpr expr + " AS " + ident
     
     "SELECT " + String.Join(", ", List.map crossSelectLine select)
 
 let crossOrderBy orderby =
-    let crossOrderByColumnType = function 
+    let crossOrderByType = function 
         | Ascending -> "ASCENDING"
         | Descending -> "DESCENDING"
 
     let crossOrderByColumn (typ, col) =
-        crossTableOrColumn col + " " + crossOrderByColumnType typ
+        crossTableOrColumn col + " " + crossOrderByType typ
 
     let convertedClauses = List.map crossOrderByColumn orderby
 
     "ORDER BY " + String.Join(", ", convertedClauses)
 
-let extract f def option = match option with
-    | Some x -> f x
-    | None -> def
+let empty xs = List.length xs = 0
 
-let extractString f = extract f ""
-
-let cross = function
-    | Query(f, wo, oo, so) -> 
-        [(extract crossSelect "SELECT *" so);
-        (crossFrom f);
-        (extractString crossWhere wo);
-        (extractString crossOrderBy oo)]
-            |> Seq.filter (not << String.IsNullOrEmpty)
-            |> fun parts -> String.Join(Environment.NewLine, parts)
+let cross (from, where, orderBy, select): string =
+    [
+        (if empty select then "SELECT *" else crossSelect select);
+        (crossFrom from);
+        (if empty where then "" else crossWhere where);
+        (if empty orderBy then "" else crossOrderBy orderBy)
+    ]
+        |> Seq.filter (not << String.IsNullOrEmpty)
+        |> fun parts -> String.Join(Environment.NewLine, parts)

@@ -5,28 +5,25 @@ open System
 open Common
 open FParsec
 
-type ProtoSql = 
-    Query of From * Where list option * OrderBy option * Select option
+type ProtoSql = From * Where list * OrderBy list * Select list
 
 and From = Dataset
 and Dataset = Table // TODO: Make this allow dataset-valued expressions
 
 and Where = 
     | WhereID of WhereID
-    | WhereValueExpr of ValueExpr
+    | WhereExpr of ValueExpr
 
 and WhereID = 
     | WhereIDSimple of Primative
     | WhereIDComposite of ValueExpr list
 
-and OrderBy = OrderByColumn list
-and OrderByColumn = OrderByColumnType * Column
-and OrderByColumnType = Ascending | Descending
+and OrderBy = OrderByType * Column
+and OrderByType = Ascending | Descending
 
-and Select = SelectLine list
-and SelectLine = 
-    | SelectLineColumn of Column
-    | SelectLineExpr of string * ValueExpr
+and Select =
+    | SelectColumn of Column
+    | SelectExpr of string * ValueExpr
 
 and ValueExpr =
     | ValueExprPrimative of Primative
