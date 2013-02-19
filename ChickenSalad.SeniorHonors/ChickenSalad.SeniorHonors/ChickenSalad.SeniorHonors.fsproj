@@ -45,10 +45,10 @@
     <Compile Include="Optimize.fs" />
     <Compile Include="Test.fs" />
     <Compile Include="Main.fs" />
-    <Content Include="SimpleSql-Grammar.txt" />
     <None Include="join-rules.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Content Include="ProtoSQL-BNF-Grammar.txt" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">
