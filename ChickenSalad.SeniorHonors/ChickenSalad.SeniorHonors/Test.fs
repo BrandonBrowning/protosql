@@ -48,6 +48,12 @@ let testWhereIdOverExpressionIfInt() =
     let expectedAST = (("", "dbo", "i like turtles"), [WhereID(WhereIDSimple(PrimativeInt 5))], [], [])
     testParse protoSql expectedAST
 
+let testWhereExpressionSimpleFunctionCall() =
+    let protoSql = "[Some Schema].[redundant]?func(Column, '2013-05-05')"
+    let astFuncArgs = [ValueExprPrimative (PrimativeLiteral "Column"); ValueExprPrimative (PrimativeString "2013-05-05")]
+    let expectedAST = (("", "Some Schema", "redundant"), [WhereExpr(ValueExprFCall("func", astFuncArgs))], [], [])
+    testParse protoSql expectedAST
+
 let testAscendingAndOrderByClauses() =
     let protoSql = @"foo/bar\baz"
     let expectedAST = (("", "", "foo"), [], [(Ascending, ("", "", "bar")); (Descending, ("", "", "baz"))], [])
@@ -71,9 +77,10 @@ let test() =
     let tests = [
         testTwoPartTableSelectStar;
         testWhereIdOverExpressionIfInt;
+        testWhereExpressionSimpleFunctionCall;
         testAscendingAndOrderByClauses;
-        testSimpleBitOfEverything;
-        testSpacedOutCode
+        testSpacedOutCode;
+        testSimpleBitOfEverything
     ]
 
     let mutable all_correct = true
