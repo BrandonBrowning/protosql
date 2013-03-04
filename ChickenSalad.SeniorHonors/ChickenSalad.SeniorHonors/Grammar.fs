@@ -11,12 +11,8 @@ and From = Dataset
 and Dataset = Table // TODO: Make this allow dataset-valued expressions
 
 and Where = 
-    | WhereID of WhereID
+    | WhereCompoundKey of ValueExpr list
     | WhereExpr of ValueExpr
-
-and WhereID = 
-    | WhereIDSimple of Primative
-    | WhereIDComposite of ValueExpr list
 
 and OrderBy = OrderByType * Column
 and OrderByType = Ascending | Descending
@@ -27,11 +23,11 @@ and Select =
 
 and ValueExpr =
     | ValueExprPrimative of Primative
-    | ValueExprBinOp of BinOp
-    | ValueExprFCall of FCall
+    | ValueExprBinaryOperator of BinaryOperator
+    | ValueExprFunctionCall of FunctionCall
 
-and BinOp = string * ValueExpr * ValueExpr
-and FCall = string * ValueExpr list
+and BinaryOperator = string * ValueExpr * ValueExpr
+and FunctionCall = string * ValueExpr list
 
 and Table = string * string * string
 and Column = string * string * string
@@ -40,4 +36,5 @@ and Primative =
     | PrimativeInt of int
     | PrimativeFloat of float
     | PrimativeString of string
+    | PrimativeBoolean of bool
     | PrimativeLiteral of string

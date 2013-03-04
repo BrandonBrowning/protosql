@@ -23,3 +23,6 @@ let printn (str: string) = printfn "%s" str
 let eprintn (str: string) = eprintfn "%s" str
 let newline = printn ""
 let enewline = eprintn ""
+
+let (<||>) f g = fun x -> f x || g x
+let (<&&>) f g = fun x -> f x && g x

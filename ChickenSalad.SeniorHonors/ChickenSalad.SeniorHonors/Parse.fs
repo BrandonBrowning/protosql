@@ -15,6 +15,7 @@ let parseRawString = pchar ''' >>. manySatisfy (fun c -> c <> ''') .>> pchar '''
 let parseRawInteger = pint32
 let parseRawFloat = pfloat
 
+let parseBoolean = (stringReturn "true" true <|> stringReturn "false" false) |>> PrimativeBoolean
 let parseLiteral = parseRawIdentifier |>> PrimativeLiteral
 let parseString = parseRawString |>> PrimativeString
 
@@ -29,6 +30,7 @@ let parsePrimative =
     choice [
         parseString;
         parseNumber;
+        parseBoolean;
         parseLiteral
     ]
 
@@ -40,56 +42,58 @@ let adjustPosition offset (pos: Position) =
     Position(pos.StreamName, pos.Index + int64 offset,
              pos.Line, pos.Column + int64 offset)
 
-let addInfixOperator str prec assoc mapping =
-    let op = InfixOperator(str, getPosition .>> spaces, prec, assoc, (),
-                           fun opPos leftTerm rightTerm ->
-                               mapping
-                                   (adjustPosition -str.Length opPos)
-                                   leftTerm rightTerm)
+let addInfixOperator str prec assoc =
+    let mapping _ left right = ValueExprBinaryOperator(str, left, right)
+    let op = InfixOperator(str, getPosition .>> spaces, prec, assoc, (), mapping)
+
     opp.AddOperator(op)
 
-addInfixOperator "+" 1 Associativity.Left (fun opPos leftTerm rightTerm -> ValueExprBinOp("+", leftTerm, rightTerm))
-addInfixOperator "-" 1 Associativity.Left (fun opPos leftTerm rightTerm -> ValueExprBinOp("-", leftTerm, rightTerm))
-addInfixOperator "*" 2 Associativity.Left (fun opPos leftTerm rightTerm -> ValueExprBinOp("*", leftTerm, rightTerm))
-addInfixOperator "/" 2 Associativity.Left (fun opPos leftTerm rightTerm -> ValueExprBinOp("/", leftTerm, rightTerm))
+addInfixOperator "<" 10 Associativity.Left
+addInfixOperator "<=" 10 Associativity.Left
+addInfixOperator ">" 10 Associativity.Left
+addInfixOperator ">=" 10 Associativity.Left
+addInfixOperator "=" 10 Associativity.Left
+addInfixOperator "!=" 40 Associativity.Left
+addInfixOperator "%" 10 Associativity.Left
+addInfixOperator "*" 10 Associativity.Left
+addInfixOperator "/" 10 Associativity.Left
+addInfixOperator "+" 20 Associativity.Left
+addInfixOperator "-" 20 Associativity.Left
+addInfixOperator "&&" 50 Associativity.Left
+addInfixOperator "||" 60 Associativity.Left
 
-parseValueExprInternalRef := (
-    let argumentCsv = csv parseValueExprInternal
-    let funcCall = betweenStr "(" ")" argumentCsv
+let parseFunctionCall = 
+    parseRawIdentifier .>>. (betweenChr '(' ')' <| csv parseValueExprInternal)
+        |>> ValueExprFunctionCall
 
-    parsePrimative .>>. (opt funcCall)
-        |>> fun (prim, args) -> match prim with
-            | PrimativeLiteral(str) -> match args with
-                | Some(args) -> ValueExprFCall (str, args)
-                | _ -> ValueExprPrimative prim
-            | _ -> ValueExprPrimative prim
-    )
-
-opp.TermParser <- parseValueExprInternal
-
-let parseValueExpr = opp.ExpressionParser
-
-let parseWhereID =
+parseValueExprInternalRef := 
     choice [
-        // NOTE: Seems duplicate logic with valueExprFcall implementation
-        //       Should it be a tuple, or share the logic?
-        csv parseValueExpr |> betweenChr '(' ')' |>> WhereIDComposite
-
-        // NOTE: The <|> below is essentially my need for a non-literal primative
-        //       Should I differentiate between them in the grammar?
-        (parseNumber <|> parseString) |>> WhereIDSimple;
+        attempt parseFunctionCall;
+        parsePrimative |>> ValueExprPrimative
     ]
 
+opp.TermParser <- (parseValueExprInternal .>> spaces)
+let parseValueExpr = opp.ExpressionParser
+
+let parseWhereCompoundKey =
+    csv parseValueExpr
+        |> betweenChr '(' ')'
+
 let parseWheres = 
-    chr '?' >>. (spaces >>. choice [
-        parseWhereID |>> WhereID
-        parseValueExpr |>> WhereExpr
-    ]) |> many
+    let parseWhere = 
+        choice [
+            parseWhereCompoundKey |>> WhereCompoundKey
+            parseValueExpr |>> WhereExpr
+        ]
+
+    (chr '?' >>. (spaces >>. parseWhere)) .>> spaces
+        |> many
 
 let parseEscapeBlock = chr '[' >>. many1Satisfy ((<>) ']') .>> chr ']'
 let parsePiece = parseRawIdentifier <|> parseEscapeBlock
-let parseThreePiece = sepBy1 parsePiece  (chr '.') |>> 
-        fun pieces -> match pieces.Length with
+let parseThreePiece = 
+    sepBy1 parsePiece  (chr '.')
+        |>> fun pieces -> match pieces.Length with
             | 3 -> (pieces.[0], pieces.[1], pieces.[2])
             | 2 -> ("", pieces.[0], pieces.[1])
             | 1 -> ("", "", pieces.[0])
@@ -98,7 +102,7 @@ let parseThreePiece = sepBy1 parsePiece  (chr '.') |>>
 let parseTable = parseThreePiece
 let parseColumn = parseThreePiece
 
-let parseOrderByColumnType = (charReturn '/' Ascending) <|> (charReturn '\\' Descending)
+let parseOrderByColumnType = (stringReturn @"_/" Ascending) <|> (stringReturn @"\_" Descending)
 let parseOrderBy = parseOrderByColumnType .>>. parseColumn
 let parseOrderBys = (parseOrderBy .>> spaces) |> many
 

@@ -10,35 +10,6 @@ open Optimize
 open Parse
 open Test
 
-let opp = new OperatorPrecedenceParser<_,_,_>()
-
-let adjustPosition offset (pos: Position) =
-    Position(pos.StreamName, pos.Index + int64 offset,
-             pos.Line, pos.Column + int64 offset)
-
-// To simplify infix operator definitions, we define a helper function.
-let addInfixOperator str prec assoc mapping =
-    let op = InfixOperator(str, getPosition .>> spaces, prec, assoc, (),
-                           fun opPos leftTerm rightTerm ->
-                               mapping
-                                   (adjustPosition -str.Length opPos)
-                                   leftTerm rightTerm)
-    opp.AddOperator(op)
-
-// Of course, you can define similar functions for other operator types.
-
-// With the helper function in place, you can define an operator with
-// a mapping function that gets passed the text location of the
-// parsed operator as the first argument.
-addInfixOperator "+" 1 Associativity.Left (fun opPos leftTerm rightTerm -> ValueExprBinOp("+", leftTerm, rightTerm))
-addInfixOperator "-" 1 Associativity.Left (fun opPos leftTerm rightTerm -> ValueExprBinOp("-", leftTerm, rightTerm))
-addInfixOperator "*" 2 Associativity.Left (fun opPos leftTerm rightTerm -> ValueExprBinOp("*", leftTerm, rightTerm))
-addInfixOperator "/" 2 Associativity.Left (fun opPos leftTerm rightTerm -> ValueExprBinOp("/", leftTerm, rightTerm))
-
-opp.TermParser <- parseValueExpr
-
-let protoSqlWithOps = opp.ExpressionParser
-
 let runPrint p str =
     let result = run p str
 

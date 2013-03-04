@@ -63,7 +63,7 @@ let getOptimizeOpFunc ident =
 
 let rec optimizeValueExpr expr =
     match expr with
-        | ValueExprBinOp(ident, leftExpr, rightExpr) ->
+        | ValueExprBinaryOperator(ident, leftExpr, rightExpr) ->
             if isOptimizableOperator ident then
                 let optimizedLeft = optimizeValueExpr leftExpr
                 let optimizedRight = optimizeValueExpr rightExpr
@@ -75,8 +75,8 @@ let rec optimizeValueExpr expr =
                         if Option.isSome result then
                             Option.get result |> ValueExprPrimative
                         else
-                            ValueExprBinOp(ident, optimizedLeft, optimizedRight)
-                    | _ -> ValueExprBinOp(ident, optimizedLeft, optimizedRight)
+                            ValueExprBinaryOperator(ident, optimizedLeft, optimizedRight)
+                    | _ -> ValueExprBinaryOperator(ident, optimizedLeft, optimizedRight)
             else
                 expr
         | _ -> expr

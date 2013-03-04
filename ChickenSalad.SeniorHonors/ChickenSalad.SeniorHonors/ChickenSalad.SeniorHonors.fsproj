@@ -44,6 +44,7 @@
     <Compile Include="Cross.fs" />
     <Compile Include="Optimize.fs" />
     <Compile Include="Test.fs" />
+    <Compile Include="DataExpr.fs" />
     <Compile Include="Main.fs" />
     <None Include="join-rules.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

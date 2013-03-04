@@ -23,7 +23,7 @@
 
 <order-by-list> ::= "" | <order-by> <order-by-list>
 <order-by> ::= <order-by-type> <opt-spacing> <column> <opt-spacing-newline>
-<order-by-type> ::= "/" | "\"
+<order-by-type> ::= "//" | "\\"
 
 <select-list> ::= "" | "{" <opt-spacing-newline> <select-list-inner> <opt-spacing-newline> "}"
 <select-inner> ::= <select> | <select> <select-list> ""

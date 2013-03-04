@@ -11,12 +11,12 @@ let crossPrimative = function
     | PrimativeLiteral(s) -> s
 
 let isOperator = function
-    | ValueExprBinOp(_, _, _) -> true
+    | ValueExprBinaryOperator(_, _, _) -> true
     | _ -> false
 
 let rec crossExpr = function
     | ValueExprPrimative(prim) -> crossPrimative prim
-    | ValueExprBinOp(ident, left, right) ->
+    | ValueExprBinaryOperator(ident, left, right) ->
         let leftExpr = crossExpr left
         let leftDisplay = (if isOperator left then sprintf "(%s)" leftExpr else leftExpr)
 
@@ -24,7 +24,7 @@ let rec crossExpr = function
         let rightDisplay = (if isOperator right then sprintf "(%s)" rightExpr else rightExpr)
 
         sprintf "%s %s %s" leftDisplay ident rightDisplay
-    | ValueExprFCall(ident, args) ->
+    | ValueExprFunctionCall(ident, args) ->
         let argList = String.Join(", ", List.map crossExpr args)
         sprintf "%s(%s)" ident argList
 
@@ -39,13 +39,13 @@ let crossFrom (a, b, c) = "FROM " + crossTableOrColumn (a, b, c)
 let crossWhere wheres = 
     let crossWhereLine where = 
         match where with
-            | WhereID(whereID) -> 
-                match whereID with
-                    | WhereIDSimple(prim) -> "*ID* = " + crossPrimative prim
-                    | WhereIDComposite(exprs) -> 
-                        let pieceList = String.Join(", ", List.map crossExpr exprs)
-                        sprintf "*ID* = (%s)" pieceList
-            | WhereExpr(expr) -> crossExpr expr
+            | WhereCompoundKey(key) -> 
+                let pieceList = String.Join(", ", List.map crossExpr key)
+                sprintf "*ID* = (%s)" pieceList
+            | WhereExpr(expr) ->
+                match expr with
+                    | ValueExprPrimative (PrimativeInt x) -> sprintf "*ID* = %d" x
+                    | _ -> crossExpr expr
 
     "WHERE " + String.Join(" AND ", List.map crossWhereLine wheres)
 

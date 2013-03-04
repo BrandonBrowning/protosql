@@ -39,38 +39,58 @@ let testParse str ast =
             false
 
 let testTwoPartTableSelectStar() =
-    let protoSql = "dbo.[Rawr omg!]"
-    let expectedAST = (("", "dbo", "Rawr omg!"), [], [], [])
+    let protoSql = "dbo.[The quick brown fox jumped!]"
+    let expectedAST = (("", "dbo", "The quick brown fox jumped!"), [], [], [])
     testParse protoSql expectedAST
 
 let testWhereIdOverExpressionIfInt() =
-    let protoSql = "dbo.[i like turtles]?5"
-    let expectedAST = (("", "dbo", "i like turtles"), [WhereID(WhereIDSimple(PrimativeInt 5))], [], [])
+    let protoSql = "five?5"
+    let expectedAST = (("", "", "five"), [WhereExpr(ValueExprPrimative(PrimativeInt 5))], [], [])
     testParse protoSql expectedAST
 
 let testWhereExpressionSimpleFunctionCall() =
     let protoSql = "[Some Schema].[redundant]?func(Column, '2013-05-05')"
-    let astFuncArgs = [ValueExprPrimative (PrimativeLiteral "Column"); ValueExprPrimative (PrimativeString "2013-05-05")]
-    let expectedAST = (("", "Some Schema", "redundant"), [WhereExpr(ValueExprFCall("func", astFuncArgs))], [], [])
+    let astFuncArgs = [ValueExprPrimative (PrimativeLiteral "Column"); ValueExprPrimative(PrimativeString "2013-05-05")]
+    let expectedAST = (("", "Some Schema", "redundant"), [WhereExpr(ValueExprFunctionCall("func", astFuncArgs))], [], [])
     testParse protoSql expectedAST
 
 let testAscendingAndOrderByClauses() =
-    let protoSql = @"foo/bar\baz"
+    let protoSql = @"foo_/bar\_baz"
     let expectedAST = (("", "", "foo"), [], [(Ascending, ("", "", "bar")); (Descending, ("", "", "baz"))], [])
     testParse protoSql expectedAST
 
 let testSpacedOutCode() =
-    let protoSql = "dbo.[i like  .spacing. $] ?    42 /foo  \n\\rawr { x = 42;\n y = '  test ' }"
+    let protoSql = "dbo.[i like  .spacing. $] ?    42 _/foo  \n\\_rawr { x = 42;\n y = '  test ' }"
     let expectedAST = (("", "dbo", "i like  .spacing. $"),
-        [WhereID(WhereIDSimple(PrimativeInt 42))],
+        [WhereExpr(ValueExprPrimative(PrimativeInt  42))],
         [(Ascending, ("", "", "foo")); (Descending, ("", "", "rawr"))],
         [SelectExpr("x", ValueExprPrimative(PrimativeInt 42)); SelectExpr("y", ValueExprPrimative(PrimativeString "  test "))]
     )
     testParse protoSql expectedAST
 
+let testMultitudeOfOperators() =
+    let protoSql = "Person ?x > 5 ?y-3 = 2"
+
+    let firstWhereAST = 
+        WhereExpr(
+            ValueExprBinaryOperator(">",
+                ValueExprPrimative(PrimativeLiteral "x"),
+                ValueExprPrimative(PrimativeInt 5)))
+
+    let secondWhereAST =
+        WhereExpr(
+            ValueExprBinaryOperator("=",
+                ValueExprBinaryOperator("-",
+                    ValueExprPrimative(PrimativeLiteral "y"),
+                    ValueExprPrimative(PrimativeInt 3)),
+                ValueExprPrimative(PrimativeInt 2)))
+
+    let expectedAST = (("", "", "Person"), [firstWhereAST; secondWhereAST], [], [])
+    testParse protoSql expectedAST
+
 let testSimpleBitOfEverything() =
-    let protoSql = "dbo.Foo?5/x{y}"
-    let expectedAST = (("", "dbo", "Foo"), [WhereID(WhereIDSimple(PrimativeInt 5))], [(Ascending,("", "", "x"))], [SelectColumn(("", "", "y"))])
+    let protoSql = "dbo.Foo?5_/x{y}"
+    let expectedAST = (("", "dbo", "Foo"), [WhereExpr(ValueExprPrimative(PrimativeInt 5))], [(Ascending,("", "", "x"))], [SelectColumn(("", "", "y"))])
     testParse protoSql expectedAST
 
 let test() =
@@ -80,6 +100,7 @@ let test() =
         testWhereExpressionSimpleFunctionCall;
         testAscendingAndOrderByClauses;
         testSpacedOutCode;
+        testMultitudeOfOperators;
         testSimpleBitOfEverything
     ]
 
