@@ -14,6 +14,11 @@ let isOperator = function
     | ValueExprBinaryOperator(_, _, _) -> true
     | _ -> false
 
+let translateBinopName = function
+    | "||" -> "OR"
+    | "&&" -> "AND"
+    | x    -> x
+
 let rec crossExpr = function
     | ValueExprPrimative(prim) -> crossPrimative prim
     | ValueExprBinaryOperator(ident, left, right) ->
@@ -23,7 +28,7 @@ let rec crossExpr = function
         let rightExpr = crossExpr right
         let rightDisplay = (if isOperator right then sprintf "(%s)" rightExpr else rightExpr)
 
-        sprintf "%s %s %s" leftDisplay ident rightDisplay
+        sprintf "%s %s %s" leftDisplay (translateBinopName ident) rightDisplay
     | ValueExprFunctionCall(ident, args) ->
         let argList = String.Join(", ", List.map crossExpr args)
         sprintf "%s(%s)" ident argList
@@ -39,13 +44,8 @@ let crossFrom (a, b, c) = "FROM " + crossTableOrColumn (a, b, c)
 let crossWhere wheres = 
     let crossWhereLine where = 
         match where with
-            | WhereCompoundKey(key) -> 
-                let pieceList = String.Join(", ", List.map crossExpr key)
-                sprintf "*ID* = (%s)" pieceList
-            | WhereExpr(expr) ->
-                match expr with
-                    | ValueExprPrimative (PrimativeInt x) -> sprintf "*ID* = %d" x
-                    | _ -> crossExpr expr
+            | ValueExprPrimative (PrimativeInt x) -> sprintf "*ID* = %d" x
+            | _ -> crossExpr where
 
     "WHERE " + String.Join(" AND ", List.map crossWhereLine wheres)
 

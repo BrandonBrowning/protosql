@@ -10,9 +10,7 @@ type ProtoSql = From * Where list * OrderBy list * Select list
 and From = Dataset
 and Dataset = Table // TODO: Make this allow dataset-valued expressions
 
-and Where = 
-    | WhereCompoundKey of ValueExpr list
-    | WhereExpr of ValueExpr
+and Where = ValueExpr
 
 and OrderBy = OrderByType * Column
 and OrderByType = Ascending | Descending

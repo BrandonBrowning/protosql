@@ -2,6 +2,7 @@
 module Main
 
 open System
+open System.Collections.Generic
 open Common
 open Cross
 open FParsec
@@ -10,26 +11,44 @@ open Optimize
 open Parse
 open Test
 
+let tabify (s: string) =
+    "\t" + s.Replace("\r\n", "\r\n\t")
+
 let runPrint p str =
     let result = run p str
-
-    printn str
-    printn "---"
 
     match result with
         | Success(result, _, _) ->
             let sql = cross result
             let optimizedSql = cross <| optimize result
 
-            printfn "Success: %A" result
-            printn "---"
-            printn sql
-            printn "---"
-            printn optimizedSql
+            printn "Parsed"
+            result |> sprintf "%A" |> tabify |> printn
+            printn "Translated"
+            tabify sql |> printn
+
+            if optimizedSql <> sql then
+                printn "Optimized"
+                printn <| tabify optimizedSql
         
         | Failure(errorMsg, _, _) -> printfn "Failure: %s" errorMsg
 
     printn ""
+
+let rec readInputLines() = 
+    seq {
+        let input = Console.ReadLine()
+        if not <| String.IsNullOrEmpty input then
+            yield input
+            yield! readInputLines()
+    }
+
+let rec repl() =
+    Console.Write("ProtoSql> ")
+    let input = readInputLines()
+    let query = String.Join("\n", input)
+    runPrint protoSqlParser query
+    repl()
 
 [<EntryPoint>]
 let main args =
@@ -37,8 +56,7 @@ let main args =
     if testing then
         test()
     else
-        let query = "table.name?gt(StartDate,getdate())/StartDate{foo=bar;baz=5.5/3}" // @"customer.Account?gt(StartDate,'2012-05-16'){EmploymentLength=datediff(getdate(), StartDate); Foo=bar+1}"
-        runPrint protoSqlParser query
+        repl()
 
     Console.ReadLine() |> ignore
     0

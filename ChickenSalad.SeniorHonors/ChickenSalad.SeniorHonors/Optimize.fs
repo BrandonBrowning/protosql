@@ -83,10 +83,7 @@ let rec optimizeValueExpr expr =
 
 let optimizeFrom = id
 
-let optimizeWhere line =
-    match line with
-        | WhereExpr valueExpr -> optimizeValueExpr valueExpr |> WhereExpr
-        | _ -> line
+let optimizeWhere = optimizeValueExpr
 
 let optimizeOrderBy = id
 

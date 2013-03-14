@@ -6,6 +6,8 @@ open FParsec
 type Parser<'t> = Parser<'t, unit>
 
 let chr = pchar
+let chr_ws c = chr c .>> spaces
+let ws_chr c = spaces >>. chr c
 
 let str = pstring
 let str_ws s = str s .>> spaces
