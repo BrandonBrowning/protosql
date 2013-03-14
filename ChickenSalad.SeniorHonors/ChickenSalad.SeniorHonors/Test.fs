@@ -95,6 +95,16 @@ let testParenthesisExpression() =
 
     testParse protoSql expectedAST
 
+let testLikeOperator() =
+    let protoSql = "foo?x~='bar'"
+    let expectedAST = (("", "", "foo"), [ValueExprBinaryOperator("~=", ValueExprPrimative(PrimativeLiteral "x"), ValueExprPrimative(PrimativeString "bar"))], [], [])
+    testParse protoSql expectedAST
+
+let testIsOperator() =
+    let protoSql = "foo?x~null"
+    let expectedAST = (("", "", "foo"), [ValueExprBinaryOperator("~", ValueExprPrimative(PrimativeLiteral "x"), ValueExprPrimative(PrimativeLiteral "null"))], [], [])
+    testParse protoSql expectedAST
+
 let testSimpleBitOfEverything() =
     let protoSql = "dbo.Foo?5_/x{y}"
     let expectedAST = (("", "dbo", "Foo"), [ValueExprPrimative(PrimativeInt 5)], [(Ascending,("", "", "x"))], [SelectColumn(("", "", "y"))])
@@ -109,6 +119,8 @@ let test() =
         testSpacedOutCode;
         testMultitudeOfOperators;
         testParenthesisExpression;
+        testLikeOperator;
+        testIsOperator;
         testSimpleBitOfEverything
     ]
 

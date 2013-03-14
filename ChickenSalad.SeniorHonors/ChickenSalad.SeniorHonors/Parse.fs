@@ -55,6 +55,8 @@ addInfixOperator "<" 10 Associativity.Left
 addInfixOperator "<=" 10 Associativity.Left
 addInfixOperator ">" 10 Associativity.Left
 addInfixOperator ">=" 10 Associativity.Left
+addInfixOperator "~" 10 Associativity.Left
+addInfixOperator "~=" 10 Associativity.Left
 addInfixOperator "=" 10 Associativity.Left
 addInfixOperator "!=" 40 Associativity.Left
 addInfixOperator "%" 10 Associativity.Left

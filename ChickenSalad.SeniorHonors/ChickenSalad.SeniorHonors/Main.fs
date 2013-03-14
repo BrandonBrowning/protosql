@@ -11,9 +11,6 @@ open Optimize
 open Parse
 open Test
 
-let tabify (s: string) =
-    "\t" + s.Replace("\r\n", "\r\n\t")
-
 let runPrint p str =
     let result = run p str
 
@@ -22,14 +19,12 @@ let runPrint p str =
             let sql = cross result
             let optimizedSql = cross <| optimize result
 
-            printn "Parsed"
-            result |> sprintf "%A" |> tabify |> printn
-            printn "Translated"
-            tabify sql |> printn
+            result |> sprintf "%A" |> printn
+            printn ""
+            printn sql
 
             if optimizedSql <> sql then
-                printn "Optimized"
-                printn <| tabify optimizedSql
+                printn optimizedSql
         
         | Failure(errorMsg, _, _) -> printfn "Failure: %s" errorMsg
 
@@ -52,7 +47,7 @@ let rec repl() =
 
 [<EntryPoint>]
 let main args =
-    let testing = true
+    let testing = false
     if testing then
         test()
     else

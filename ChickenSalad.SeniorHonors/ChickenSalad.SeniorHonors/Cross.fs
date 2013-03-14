@@ -17,6 +17,8 @@ let isOperator = function
 let translateBinopName = function
     | "||" -> "OR"
     | "&&" -> "AND"
+    | "~" -> "IS"
+    | "~=" -> "LIKE"
     | x    -> x
 
 let rec crossExpr = function
