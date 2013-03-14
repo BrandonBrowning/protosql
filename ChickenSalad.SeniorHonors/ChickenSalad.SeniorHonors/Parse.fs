@@ -92,11 +92,19 @@ let parseEscapeBlock = chr '[' >>. many1Satisfy ((<>) ']') .>> chr ']'
 let parsePiece = parseRawIdentifier <|> parseEscapeBlock
 let parseThreePiece = 
     sepBy1 parsePiece  (chr '.')
-        |>> fun pieces -> match pieces.Length with
-            | 3 -> (pieces.[0], pieces.[1], pieces.[2])
-            | 2 -> ("", pieces.[0], pieces.[1])
-            | 1 -> ("", "", pieces.[0])
-            | _ -> ("", "", "")
+        |>> fun pieces -> 
+            match pieces.Length with
+                | 3 -> (pieces.[0], pieces.[1], pieces.[2])
+                | 2 -> ("", pieces.[0], pieces.[1])
+                | 1 -> ("", "", pieces.[0])
+                | _ -> ("", "", "")
+        |> fun p ->
+            fun stream ->
+                let result = (p stream).Result
+                if result = ("", "", "") then
+                    Reply(Error, expectedString "Only 1, 2, or 3 parts to column or table identifier")
+                else
+                    Reply(result)
 
 let parseTable = parseThreePiece
 let parseColumn = parseThreePiece
