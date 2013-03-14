@@ -28,3 +28,5 @@ let enewline = eprintn ""
 
 let (<||>) f g = fun x -> f x || g x
 let (<&&>) f g = fun x -> f x && g x
+
+let rmatch text pattern = System.Text.RegularExpressions.Regex.IsMatch(text, pattern)

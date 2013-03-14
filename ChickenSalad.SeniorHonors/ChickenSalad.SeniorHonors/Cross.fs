@@ -2,6 +2,7 @@
 module Cross
 
 open System
+open Common
 open Grammar
 
 let crossPrimative = function
@@ -35,9 +36,17 @@ let rec crossExpr = function
         let argList = String.Join(", ", List.map crossExpr args)
         sprintf "%s(%s)" ident argList
 
+let optionallyBracket (s: string) =
+    let needsBrackets = not <| rmatch s "^\w[\w\d]*$"
+    if needsBrackets then
+        "[" + s + "]"
+    else
+        s
+
 let crossTableOrColumn (a, b, c) =
     [a; b; c] 
         |> Seq.filter (not << String.IsNullOrEmpty)
+        |> Seq.map optionallyBracket
         |> fun cs -> String.Join(".", cs)
 
 let crossFrom (a, b, c) = "FROM " + crossTableOrColumn (a, b, c)
