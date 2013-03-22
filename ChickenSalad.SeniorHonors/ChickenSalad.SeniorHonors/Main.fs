@@ -47,7 +47,7 @@ let rec repl() =
 
 [<EntryPoint>]
 let main args =
-    let testing = false
+    let testing = true
     if testing then
         test()
     else

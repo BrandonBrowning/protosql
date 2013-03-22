@@ -55,12 +55,12 @@ let testWhereExpressionSimpleFunctionCall() =
     testParse protoSql expectedAST
 
 let testAscendingAndOrderByClauses() =
-    let protoSql = @"foo_/bar\_baz"
+    let protoSql = @"foo//bar\\baz"
     let expectedAST = (("", "", "foo"), [], [(Ascending, ("", "", "bar")); (Descending, ("", "", "baz"))], [])
     testParse protoSql expectedAST
 
 let testSpacedOutCode() =
-    let protoSql = "dbo.[i like  .spacing. $] ?    42 _/foo  \n\\_rawr { x = 42;\n y = '  test ' }"
+    let protoSql = "dbo.[i like  .spacing. $] ?    42 //foo  \n\\\\rawr { x = 42;\n y = '  test ' }"
     let expectedAST = (("", "dbo", "i like  .spacing. $"),
         [ValueExprPrimative(PrimativeInt  42)],
         [(Ascending, ("", "", "foo")); (Descending, ("", "", "rawr"))],
@@ -106,7 +106,7 @@ let testIsOperator() =
     testParse protoSql expectedAST
 
 let testSimpleBitOfEverything() =
-    let protoSql = "dbo.Foo?5_/x{y}"
+    let protoSql = "dbo.Foo?5//x{y}"
     let expectedAST = (("", "dbo", "Foo"), [ValueExprPrimative(PrimativeInt 5)], [(Ascending,("", "", "x"))], [SelectColumn(("", "", "y"))])
     testParse protoSql expectedAST
 

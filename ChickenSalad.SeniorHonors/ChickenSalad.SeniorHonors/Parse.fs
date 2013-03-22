@@ -13,18 +13,18 @@ let (protoSqlParser: Parser), protoSqlParserRef = createParserForwardedToRef()
 let parseRawIdentifier: Parser<string, unit> = many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c)
 let parseRawString = pchar ''' >>. manySatisfy (fun c -> c <> ''') .>> pchar '''
 let parseRawInteger = pint32
-let parseRawFloat = pfloat
+let parseRawFloat = pfloat 
 
-let parseBoolean = (stringReturn "true" true <|> stringReturn "false" false) |>> PrimativeBoolean
-let parseLiteral = parseRawIdentifier |>> PrimativeLiteral
-let parseString = parseRawString |>> PrimativeString
+let parseBoolean = (stringReturn "true" true <|> stringReturn "false" false) |>> PrimativeBoolean <?> "bool"
+let parseLiteral = parseRawIdentifier |>> PrimativeLiteral <?> "literal"
+let parseString = parseRawString |>> PrimativeString <?> "string"
 
 let parseNumberOptions = NumberLiteralOptions.AllowFraction ||| NumberLiteralOptions.AllowMinusSign
 let parseNumber = 
     numberLiteral parseNumberOptions "number"
-        |>> fun x ->
+        |>> (fun x ->
             if x.IsInteger then x.String |> int |> PrimativeInt
-            else x.String |> float |> PrimativeFloat
+            else x.String |> float |> PrimativeFloat) <?> "number"
 
 let parsePrimative =
     choice [
@@ -32,7 +32,7 @@ let parsePrimative =
         parseNumber;
         parseBoolean;
         parseLiteral
-    ]
+    ] <?> "primative"
 
 let parseValueExprInternal, parseValueExprInternalRef = createParserForwardedToRef()
 
@@ -45,7 +45,8 @@ let adjustPosition offset (pos: Position) =
 
 let addInfixOperator str prec assoc =
     let mapping _ left right = ValueExprBinaryOperator(str, left, right)
-    let op = InfixOperator(str, getPosition .>> spaces, prec, assoc, (), mapping)
+    let parseOperator = anyOf "&|<=>~!%*/+-"
+    let op = InfixOperator(str, notFollowedBy (chr '/') .>> spaces, prec, assoc, (), mapping)
 
     opp.AddOperator(op)
 
@@ -109,8 +110,8 @@ let parseThreePiece =
 let parseTable = parseThreePiece
 let parseColumn = parseThreePiece
 
-let parseOrderByColumnType = (stringReturn @"_/" Ascending) <|> (stringReturn @"\_" Descending)
-let parseOrderBy = parseOrderByColumnType .>>. parseColumn
+let parseOrderByColumnType = (stringReturn @"//" Ascending) <|> (stringReturn @"\\" Descending)
+let parseOrderBy = (parseOrderByColumnType .>> spaces) .>>. parseColumn
 let parseOrderBys = (parseOrderBy .>> spaces) |> many
 
 let parseSelectExpr = (parseRawIdentifier .>> (spaces .>> chr '=' .>> spaces)) .>>. parseValueExpr
