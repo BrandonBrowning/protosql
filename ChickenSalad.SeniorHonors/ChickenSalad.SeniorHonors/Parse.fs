@@ -10,7 +10,7 @@ type Parser = Parser<ProtoSql, unit>
 
 let (protoSqlParser: Parser), protoSqlParserRef = createParserForwardedToRef()
 
-let parseRawIdentifier: Parser<string, unit> = many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c)
+let parseRawIdentifier = many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c)
 let parseRawString = pchar ''' >>. manySatisfy (fun c -> c <> ''') .>> pchar '''
 let parseRawInteger = pint32
 let parseRawFloat = pfloat 
@@ -57,7 +57,7 @@ addInfixOperator "<=" 10 Associativity.Left
 addInfixOperator ">" 10 Associativity.Left
 addInfixOperator ">=" 10 Associativity.Left
 addInfixOperator "~" 10 Associativity.Left
-addInfixOperator "~=" 10 Associativity.Left
+addInfixOperator "!~" 10 Associativity.Left
 addInfixOperator "=" 10 Associativity.Left
 addInfixOperator "!=" 40 Associativity.Left
 addInfixOperator "%" 10 Associativity.Left
@@ -77,7 +77,7 @@ parseValueExprInternalRef :=
         parsePrimative |>> ValueExprPrimative
     ]
 
-opp.TermParser <- (parseValueExprInternal .>> spaces)
+opp.TermParser <- parseValueExprInternal .>> spaces
 
 let parseWhereCompoundKey =
     csv parseValueExpr
@@ -88,9 +88,11 @@ let parseWheres =
 
     (chr '?' >>. (spaces >>. parseWhere)) .>> spaces
         |> many
+        <?> "where clause"
 
 let parseEscapeBlock = chr '[' >>. many1Satisfy ((<>) ']') .>> chr ']'
-let parsePiece = parseRawIdentifier <|> parseEscapeBlock
+
+let parsePiece =  parseRawIdentifier <|> parseEscapeBlock
 let parseThreePiece = 
     sepBy1 parsePiece  (chr '.')
         |>> fun pieces -> 
@@ -101,18 +103,41 @@ let parseThreePiece =
                 | _ -> ("", "", "")
         |> fun p ->
             fun stream ->
-                let result = (p stream).Result
-                if result = ("", "", "") then
-                    Reply(Error, expectedString "Only 1, 2, or 3 parts to column or table identifier")
+                let reply = p stream
+
+                if reply.Status <> ReplyStatus.Ok then
+                    Reply(Error, expectedString "Table or Column parsing error")
+                else 
+                    match reply.Result with
+                        | ("", "", "") -> Reply(Error, expectedString "Expect 1, 2, or 3 parts to column or table identifier")
+                        | result       -> Reply(result)
+
+let parseJoinTwoPiece = 
+    chr '(' >>. spaces >>. sepBy parseRawIdentifier (chr ',' .>> spaces) .>> spaces .>> chr ')'
+        |>> fun pieces -> 
+            match pieces.Length with
+                | 2 -> (pieces.[0], pieces.[1])
+                | 1 -> (pieces.[0], "")
+                | 0 -> ("", "")
+                | n -> (null, n.ToString())
+        |> fun p ->
+            fun stream ->
+                let reply = p stream
+
+                if reply.Status = ReplyStatus.Ok then
+                    Reply(reply.Result)
                 else
-                    Reply(result)
+                    Reply(Error, expectedString <| sprintf "Join two-piece parsing error")
 
 let parseTable = parseThreePiece
 let parseColumn = parseThreePiece
 
-let parseOrderByColumnType = (stringReturn @"//" Ascending) <|> (stringReturn @"\\" Descending)
+let parseOrderByColumnType = (stringReturn @"//" Ascending) <|> (stringReturn @"\\" Descending) <?> "order-by type"
 let parseOrderBy = (parseOrderByColumnType .>> spaces) .>>. parseColumn
-let parseOrderBys = (parseOrderBy .>> spaces) |> many
+let parseOrderBys = 
+    (parseOrderBy .>> spaces)
+        |> many
+        <?> "order-by clause"
 
 let parseSelectExpr = (parseRawIdentifier .>> (spaces .>> chr '=' .>> spaces)) .>>. parseValueExpr
 let parseSelect =
@@ -122,12 +147,29 @@ let parseSelect =
     ]
 
 let parseSelects = 
-    sepBy parseSelect ((skipNewline <|> skipChar ';') .>> spaces) 
+    sepBy parseSelect ((skipNewline <|> skipChar ';') .>> spaces)
         |> between (chr '{' .>> spaces) (spaces >>. chr '}')
         |> opt
         |>> function
             | Some(x) -> x
             | None -> []
+        <?> "select clause"
 
-let parseFrom = parseTable
-protoSqlParserRef := tuple4 parseFrom (spaces >>. parseWheres) (spaces >>. parseOrderBys) parseSelects .>> eof
+let parseJoinArrow = 
+    stringReturn "-->" InnerJoin
+    <|> stringReturn "-=>" OuterJoin
+    <|> stringReturn "-x>" CrossJoin
+    <?> "join arrow"
+
+let parseJoinColumns = parseJoinTwoPiece <?> "join column list"
+let parseJoin = tuple4 (parseTable .>> spaces) (parseJoinArrow .>> spaces) (parseTable .>> spaces) parseJoinColumns
+
+let parseFrom =
+    choice [
+        many parseJoin |>> FromJoins |> attempt;
+        parseTable |>> FromTable
+    ]
+
+protoSqlParserRef := 
+    tuple4 (parseFrom .>> spaces) (parseWheres .>> spaces) (parseOrderBys .>> spaces) (parseSelects .>> spaces)
+        .>> eof

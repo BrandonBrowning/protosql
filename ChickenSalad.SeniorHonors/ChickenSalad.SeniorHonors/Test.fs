@@ -40,28 +40,28 @@ let testParse str ast =
 
 let testTwoPartTableSelectStar() =
     let protoSql = "dbo.[The quick brown fox jumped!]"
-    let expectedAST = (("", "dbo", "The quick brown fox jumped!"), [], [], [])
+    let expectedAST = (FromTable("", "dbo", "The quick brown fox jumped!"), [], [], [])
     testParse protoSql expectedAST
 
 let testWhereIdOverExpressionIfInt() =
     let protoSql = "five?5"
-    let expectedAST = (("", "", "five"), [ValueExprPrimative(PrimativeInt 5)], [], [])
+    let expectedAST = (FromTable("", "", "five"), [ValueExprPrimative(PrimativeInt 5)], [], [])
     testParse protoSql expectedAST
 
 let testWhereExpressionSimpleFunctionCall() =
     let protoSql = "[Some Schema].[redundant]?func(Column, '2013-05-05')"
     let astFuncArgs = [ValueExprPrimative (PrimativeLiteral "Column"); ValueExprPrimative(PrimativeString "2013-05-05")]
-    let expectedAST = (("", "Some Schema", "redundant"), [ValueExprFunctionCall("func", astFuncArgs)], [], [])
+    let expectedAST = (FromTable("", "Some Schema", "redundant"), [ValueExprFunctionCall("func", astFuncArgs)], [], [])
     testParse protoSql expectedAST
 
 let testAscendingAndOrderByClauses() =
     let protoSql = @"foo//bar\\baz"
-    let expectedAST = (("", "", "foo"), [], [(Ascending, ("", "", "bar")); (Descending, ("", "", "baz"))], [])
+    let expectedAST = (FromTable("", "", "foo"), [], [(Ascending, ("", "", "bar")); (Descending, ("", "", "baz"))], [])
     testParse protoSql expectedAST
 
 let testSpacedOutCode() =
     let protoSql = "dbo.[i like  .spacing. $] ?    42 //foo  \n\\\\rawr { x = 42;\n y = '  test ' }"
-    let expectedAST = (("", "dbo", "i like  .spacing. $"),
+    let expectedAST = (FromTable("", "dbo", "i like  .spacing. $"),
         [ValueExprPrimative(PrimativeInt  42)],
         [(Ascending, ("", "", "foo")); (Descending, ("", "", "rawr"))],
         [SelectExpr("x", ValueExprPrimative(PrimativeInt 42)); SelectExpr("y", ValueExprPrimative(PrimativeString "  test "))]
@@ -83,7 +83,7 @@ let testMultitudeOfOperators() =
                 ValueExprPrimative(PrimativeInt 3)),
             ValueExprPrimative(PrimativeInt 2))
 
-    let expectedAST = (("", "", "Person"), [firstWhereAST; secondWhereAST], [], [])
+    let expectedAST = (FromTable("", "", "Person"), [firstWhereAST; secondWhereAST], [], [])
     testParse protoSql expectedAST
 
 let testParenthesisExpression() =
@@ -91,23 +91,33 @@ let testParenthesisExpression() =
 
     let divisionAST = ValueExprBinaryOperator("/", ValueExprPrimative(PrimativeLiteral "x"), ValueExprPrimative(PrimativeInt 5))
     let barCallAST = ValueExprFunctionCall("bar", [ValueExprPrimative(PrimativeLiteral "y")])
-    let expectedAST = (("", "", "foo"), [ValueExprBinaryOperator(">", divisionAST, barCallAST)], [], [])
+    let expectedAST = (FromTable("", "", "foo"), [ValueExprBinaryOperator(">", divisionAST, barCallAST)], [], [])
 
     testParse protoSql expectedAST
 
 let testLikeOperator() =
-    let protoSql = "foo?x~='bar'"
-    let expectedAST = (("", "", "foo"), [ValueExprBinaryOperator("~=", ValueExprPrimative(PrimativeLiteral "x"), ValueExprPrimative(PrimativeString "bar"))], [], [])
+    let protoSql = "foo?x~'bar'"
+    let expectedAST = (FromTable("", "", "foo"), [ValueExprBinaryOperator("~", ValueExprPrimative(PrimativeLiteral "x"), ValueExprPrimative(PrimativeString "bar"))], [], [])
     testParse protoSql expectedAST
 
-let testIsOperator() =
-    let protoSql = "foo?x~null"
-    let expectedAST = (("", "", "foo"), [ValueExprBinaryOperator("~", ValueExprPrimative(PrimativeLiteral "x"), ValueExprPrimative(PrimativeLiteral "null"))], [], [])
+let testInnerJoin() =
+    let protoSql = "dbo.Test --> dbo.Test2()"
+    let expectedAST = (FromJoins[(("", "dbo", "Test"), JoinType.InnerJoin, ("", "dbo", "Test2"), ("", ""))], [], [], [])
+    testParse protoSql expectedAST
+
+let testOuterJoin() =
+    let protoSql = "dbo.Test -=> dbo.Test2()"
+    let expectedAST = (FromJoins[(("", "dbo", "Test"), JoinType.OuterJoin, ("", "dbo", "Test2"), ("", ""))], [], [], [])
+    testParse protoSql expectedAST
+
+let testCrossJoin() =
+    let protoSql = "dbo.Test -x> dbo.Test2()"
+    let expectedAST = (FromJoins[(("", "dbo", "Test"), JoinType.CrossJoin, ("", "dbo", "Test2"), ("", ""))], [], [], [])
     testParse protoSql expectedAST
 
 let testSimpleBitOfEverything() =
     let protoSql = "dbo.Foo?5//x{y}"
-    let expectedAST = (("", "dbo", "Foo"), [ValueExprPrimative(PrimativeInt 5)], [(Ascending,("", "", "x"))], [SelectColumn(("", "", "y"))])
+    let expectedAST = (FromTable("", "dbo", "Foo"), [ValueExprPrimative(PrimativeInt 5)], [(Ascending,("", "", "x"))], [SelectColumn(("", "", "y"))])
     testParse protoSql expectedAST
 
 let test() =
@@ -120,7 +130,7 @@ let test() =
         testMultitudeOfOperators;
         testParenthesisExpression;
         testLikeOperator;
-        testIsOperator;
+        testInnerJoin; testOuterJoin; testCrossJoin
         testSimpleBitOfEverything
     ]
 

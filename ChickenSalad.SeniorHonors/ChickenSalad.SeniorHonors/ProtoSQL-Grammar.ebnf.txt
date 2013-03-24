@@ -3,11 +3,11 @@
 ;  by Brandon Browning
 
 ; Assumed symbols:
-;   <EOL>
 ;   <EOF>
 ;   <int>
 ;   <float>
 ;   <sql-string-text> ; For simplicity, the allowed SQL text between single quote (')'s in a string
+;   <newline>
 ;   <tab>
 ; Note: No strings are escaped; instead the above symbols are used
 
@@ -17,9 +17,13 @@
 	<order-by-clause>? <spacing>
 	<select-clause>? <spacing>
 
-<data-expr> ::= <table> ; TODO: Support joins etc
+<data-expr> ::= <join>+ | <table>
+<join> ::= <table> <spacing> <join-arrow> <spacing> table> <join-tuple>?
+<join-tuple> ::= "(" <spacing> <join-tuple-body> <spacing> ")"
+<join-tuple-body> ::= <bracket-ident> (<spacing> "," <spacing> <bracket-ident>)?
+<join-arrow> ::= "-->" | "-=>" | "-x>"
 
-<where-clause> ::= <where>+
+<where-clause> ::= <where>+v
 <where> ::= "?" (<where-id> | <value-expr>)
 <where-id> ::= <int> | <tuple>
 
@@ -28,11 +32,12 @@
 <order-by-type> ::= "//" | "\\"
 
 <select-clause> ::= ("{" <spacing> <select-body> <spacing> "}")
-<select-body> ::= (<select> <spacing> ";" <spacing>)* <select> <spacing> ";"?
+<select-body> ::= (<select> <spacing> <select-seperator> <spacing>)* <select> <spacing> <select-seperator>?
 <select> ::= (<ident-or-bracket> <spacing> "=" <spacing>) <value-expr>
+<select-seperator> ::= (";" | <newline>)
 
-<column> ::= <tri-string-tuple>
-<table> ::= <tri-string-tuple>
+<column> ::= <tri-string>
+<table> ::= <tri-string>
 <tri-string> ::= <ident-or-bracket> (<spacing> "." <spacing> <ident-or-bracket>){0,2}
 
 <tuple> ::= "(" <tuple-body> ")"
@@ -43,7 +48,7 @@
 <string> ::= "'" <sql-string-text>  "'"
 <literal> ::= <ident>
 <binary-op> ::= <value-expr> <opt-spacing> <binary-op-name> <opt-spacing> <value-expr>
-<binary-op-name> ::= "&&" | "||" | "<" | "<=" | ">" | ">=" | "~" | "~=" | "=" | "!=" | "%" | "*" | "/" | "+" | "-"
+<binary-op-name> ::= "&&" | "||" | "<" | "<=" | ">" | ">=" | "~" | "!~" | "=" | "!=" | "%" | "*" | "/" | "+" | "-"
 <f-call> ::= <ident> <tuple>
 
 <spacing> ::= <space-or-newline>?

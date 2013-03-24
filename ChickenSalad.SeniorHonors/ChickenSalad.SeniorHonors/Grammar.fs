@@ -7,8 +7,13 @@ open FParsec
 
 type ProtoSql = From * Where list * OrderBy list * Select list
 
-and From = Dataset
-and Dataset = Table // TODO: Make this allow dataset-valued expressions
+and From =
+    | FromJoins of Join list
+    | FromTable of Table
+
+and Join = Table * JoinType * Table * JoinColumns
+and JoinColumns = string * string
+and JoinType = InnerJoin | OuterJoin | CrossJoin
 
 and Where = ValueExpr
 

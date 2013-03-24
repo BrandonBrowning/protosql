@@ -46,10 +46,7 @@
     <Compile Include="Test.fs" />
     <Compile Include="DataExpr.fs" />
     <Compile Include="Main.fs" />
-    <None Include="join-rules.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <Content Include="ProtoSQL-BNF-Grammar.txt" />
+    <Content Include="ProtoSQL-Grammar.ebnf.txt" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">
