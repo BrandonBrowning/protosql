@@ -10,13 +10,60 @@ type Parser = Parser<ProtoSql, unit>
 
 let (protoSqlParser: Parser), protoSqlParserRef = createParserForwardedToRef()
 
+let parseEscapeBlock = chr '[' >>. many1Satisfy ((<>) ']') .>> chr ']'
 let parseRawIdentifier = many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c)
+let parsePiece =  parseEscapeBlock <|> parseRawIdentifier
+let parseThreePiece = 
+    sepBy1 parsePiece  (chr '.')
+        |>> fun pieces -> 
+            match pieces.Length with
+                | 3 -> (pieces.[0], pieces.[1], pieces.[2])
+                | 2 -> ("", pieces.[0], pieces.[1])
+                | 1 -> ("", "", pieces.[0])
+                | _ -> ("", "", "")
+        |> fun p ->
+            fun stream ->
+                let reply = p stream
+
+                if reply.Status <> ReplyStatus.Ok then
+                    Reply(Error, unexpectedString "Table or Column parsing error")
+                else 
+                    match reply.Result with
+                        | ("", "", "") -> Reply(Error, unexpectedString "Column or Table identifier should contain 1, 2, or 3 parts")
+                        | result       -> Reply(result)
+
+let parseJoinTwoPiece = 
+    chr '(' >>. spaces >>. sepBy parseRawIdentifier (chr ',' .>> spaces) .>> spaces .>> chr ')'
+        |>> fun pieces -> 
+            match pieces.Length with
+                | 2 -> (pieces.[0], pieces.[1])
+                | 1 -> (pieces.[0], "")
+                | 0 -> ("", "")
+                | n -> (null, n.ToString())
+        |> fun p ->
+            fun stream ->
+                let reply = p stream
+
+                if reply.Status = ReplyStatus.Ok then
+                    Reply(reply.Result)
+                else
+                    Reply(Error, expectedString <| sprintf "Join two-piece parsing error")
+
+let flattenIdentifier (a, b, c) =
+    [a; b; c]
+        |> Seq.filter (not << String.IsNullOrEmpty)
+        |> sjoin "."
+
+let parseLiteral =
+    parseThreePiece
+        |>> flattenIdentifier
+        |>> PrimativeLiteral
+        <?> "literal"
+
 let parseRawString = pchar ''' >>. manySatisfy (fun c -> c <> ''') .>> pchar '''
 let parseRawInteger = pint32
 let parseRawFloat = pfloat 
-
 let parseBoolean = (stringReturn "true" true <|> stringReturn "false" false) |>> PrimativeBoolean <?> "bool"
-let parseLiteral = parseRawIdentifier |>> PrimativeLiteral <?> "literal"
 let parseString = parseRawString |>> PrimativeString <?> "string"
 
 let parseNumberOptions = NumberLiteralOptions.AllowFraction ||| NumberLiteralOptions.AllowMinusSign
@@ -90,45 +137,6 @@ let parseWheres =
         |> many
         <?> "where clause"
 
-let parseEscapeBlock = chr '[' >>. many1Satisfy ((<>) ']') .>> chr ']'
-
-let parsePiece =  parseRawIdentifier <|> parseEscapeBlock
-let parseThreePiece = 
-    sepBy1 parsePiece  (chr '.')
-        |>> fun pieces -> 
-            match pieces.Length with
-                | 3 -> (pieces.[0], pieces.[1], pieces.[2])
-                | 2 -> ("", pieces.[0], pieces.[1])
-                | 1 -> ("", "", pieces.[0])
-                | _ -> ("", "", "")
-        |> fun p ->
-            fun stream ->
-                let reply = p stream
-
-                if reply.Status <> ReplyStatus.Ok then
-                    Reply(Error, expectedString "Table or Column parsing error")
-                else 
-                    match reply.Result with
-                        | ("", "", "") -> Reply(Error, expectedString "Expect 1, 2, or 3 parts to column or table identifier")
-                        | result       -> Reply(result)
-
-let parseJoinTwoPiece = 
-    chr '(' >>. spaces >>. sepBy parseRawIdentifier (chr ',' .>> spaces) .>> spaces .>> chr ')'
-        |>> fun pieces -> 
-            match pieces.Length with
-                | 2 -> (pieces.[0], pieces.[1])
-                | 1 -> (pieces.[0], "")
-                | 0 -> ("", "")
-                | n -> (null, n.ToString())
-        |> fun p ->
-            fun stream ->
-                let reply = p stream
-
-                if reply.Status = ReplyStatus.Ok then
-                    Reply(reply.Result)
-                else
-                    Reply(Error, expectedString <| sprintf "Join two-piece parsing error")
-
 let parseTable = parseThreePiece
 let parseColumn = parseThreePiece
 
@@ -147,7 +155,10 @@ let parseSelect =
     ]
 
 let parseSelects = 
-    sepBy parseSelect ((skipNewline <|> skipChar ';') .>> spaces)
+    let divider = (skipNewline <|> skipChar ';') .>> spaces
+
+    parseSelect
+        |> seperate divider
         |> between (chr '{' .>> spaces) (spaces >>. chr '}')
         |> opt
         |>> function
@@ -161,7 +172,7 @@ let parseJoinArrow =
     <|> stringReturn "-x>" CrossJoin
     <?> "join arrow"
 
-let parseJoinColumns = parseJoinTwoPiece <?> "join column list"
+let parseJoinColumns = (parseJoinTwoPiece <|> stringReturn "" ("", "")) <?> "join column list"
 let parseJoin = tuple4 (parseTable .>> spaces) (parseJoinArrow .>> spaces) (parseTable .>> spaces) parseJoinColumns
 
 let parseFrom =

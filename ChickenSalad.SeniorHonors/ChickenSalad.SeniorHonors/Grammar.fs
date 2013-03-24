@@ -36,8 +36,8 @@ and Table = string * string * string
 and Column = string * string * string
 
 and Primative =
-    | PrimativeInt of int
-    | PrimativeFloat of float
-    | PrimativeString of string
     | PrimativeBoolean of bool
+    | PrimativeFloat of float
+    | PrimativeInt of int
+    | PrimativeString of string
     | PrimativeLiteral of string

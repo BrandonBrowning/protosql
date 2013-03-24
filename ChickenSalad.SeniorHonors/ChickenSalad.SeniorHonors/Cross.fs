@@ -6,14 +6,15 @@ open Common
 open Grammar
 
 let tabbing = "    "
-let newline = Environment.NewLine
-
-let joinLines (lines: #obj seq) = String.Join(newline, lines)
+let joinLines = sjoin newline
 
 let crossPrimative = function
     | PrimativeInt(i) -> i.ToString()
     | PrimativeFloat(i) -> i.ToString()
     | PrimativeString(s) -> sprintf "'%s'" s
+    | PrimativeBoolean(s) -> match s with
+        | true -> "1"
+        | false -> "0"
     | PrimativeLiteral(s) ->
         if s = "null" then "NULL" else s
 

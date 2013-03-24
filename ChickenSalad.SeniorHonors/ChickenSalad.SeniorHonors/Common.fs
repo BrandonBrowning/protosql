@@ -1,6 +1,6 @@
 ﻿
 module Common
-
+open System
 open FParsec
 
 type Parser<'t> = Parser<'t, unit>
@@ -23,8 +23,9 @@ let csv p = sepBy (p .>> spaces) (str "," .>> spaces)
 let id x = x
 let printn (str: string) = printfn "%s" str
 let eprintn (str: string) = eprintfn "%s" str
-let newline = printn ""
-let enewline = eprintn ""
+
+let newline = Environment.NewLine
+let sjoin (sep: string) (lines: #obj seq) = String.Join(sep, lines)
 
 let (<||>) f g = fun x -> f x || g x
 let (<&&>) f g = fun x -> f x && g x
