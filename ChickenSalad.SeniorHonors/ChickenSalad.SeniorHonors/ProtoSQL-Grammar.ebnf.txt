@@ -32,9 +32,8 @@
 <order-by-type> ::= "//" | "\\"
 
 <select-clause> ::= ("{" <spacing> <select-body> <spacing> "}")
-<select-body> ::= (<select> <spacing> <select-seperator> <spacing>)* <select> <spacing> <select-seperator>?
+<select-body> ::= (<select> <spacing> ";" <spacing>)* <select> <spacing>
 <select> ::= (<ident-or-bracket> <spacing> "=" <spacing>) <value-expr>
-<select-seperator> ::= (";" | <newline>)
 
 <column> ::= <tri-string>
 <table> ::= <tri-string>

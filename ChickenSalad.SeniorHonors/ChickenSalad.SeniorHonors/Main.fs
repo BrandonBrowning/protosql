@@ -30,13 +30,21 @@ let runPrint p str =
 
     printn ""
 
-let rec readInputLines() = 
-    seq {
-        let input = Console.ReadLine()
-        if not <| String.IsNullOrEmpty input then
-            yield input
-            yield! readInputLines()
-    }
+let MAX_SEQUENTIAL_EMPTY_REPL_LINES = 1
+let readInputLines() = 
+    let rec readInputLines' emptyLineStreak =
+        seq {
+            let input = Console.ReadLine()
+            let thisLineEmpty = String.IsNullOrWhiteSpace input
+
+            let emptyLineStreak' = emptyLineStreak + (if thisLineEmpty then 1 else 0)
+
+            if emptyLineStreak' < MAX_SEQUENTIAL_EMPTY_REPL_LINES then
+                yield input
+                yield! readInputLines' emptyLineStreak'
+        }
+
+    readInputLines' 0
 
 let rec repl() =
     Console.Write("ProtoSql> ")

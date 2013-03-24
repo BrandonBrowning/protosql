@@ -131,7 +131,7 @@ let parseWhereCompoundKey =
         |> betweenChr '(' ')'
 
 let parseWheres = 
-    let parseWhere = parseValueExpr
+    let parseWhere = parseValueExpr <?> "where expression"
 
     (chr '?' >>. (spaces >>. parseWhere)) .>> spaces
         |> many
@@ -143,7 +143,7 @@ let parseColumn = parseThreePiece
 let parseOrderByColumnType = (stringReturn @"//" Ascending) <|> (stringReturn @"\\" Descending) <?> "order-by type"
 let parseOrderBy = (parseOrderByColumnType .>> spaces) .>>. parseColumn
 let parseOrderBys = 
-    (parseOrderBy .>> spaces)
+    parseOrderBy .>> spaces
         |> many
         <?> "order-by clause"
 
@@ -155,10 +155,8 @@ let parseSelect =
     ]
 
 let parseSelects = 
-    let divider = (skipNewline <|> skipChar ';') .>> spaces
-
     parseSelect
-        |> seperate divider
+        |> seperate (chr ';' .>> spaces)
         |> between (chr '{' .>> spaces) (spaces >>. chr '}')
         |> opt
         |>> function
@@ -177,8 +175,8 @@ let parseJoin = tuple4 (parseTable .>> spaces) (parseJoinArrow .>> spaces) (pars
 
 let parseFrom =
     choice [
-        many parseJoin |>> FromJoins |> attempt;
-        parseTable |>> FromTable
+        parseTable <?> "table name" |>> FromTable
+        many parseJoin <?> "join list" |> attempt |>> FromJoins;
     ]
 
 protoSqlParserRef := 
