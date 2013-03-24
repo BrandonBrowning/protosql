@@ -180,7 +180,7 @@ let parseJoin = tuple4 (parseTable .>> spaces) (parseJoinArrow .>> spaces) (pars
 
 let parseFrom =
     choice [
-        many parseJoin <?> "join list" |> attempt |>> FromJoins;
+        many1 parseJoin <?> "join list" |> attempt |>> FromJoins;
         parseTable <?> "table name" |>> FromTable
     ] <?> "from clause"
 

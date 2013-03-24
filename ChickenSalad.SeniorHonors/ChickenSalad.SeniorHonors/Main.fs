@@ -37,7 +37,7 @@ let readInputLines() =
             let input = Console.ReadLine()
             let thisLineEmpty = String.IsNullOrWhiteSpace input
 
-            let emptyLineStreak' = emptyLineStreak + (if thisLineEmpty then 1 else 0)
+            let emptyLineStreak' = if thisLineEmpty then emptyLineStreak + 1 else 0
 
             if emptyLineStreak' < MAX_SEQUENTIAL_EMPTY_REPL_LINES then
                 yield input
