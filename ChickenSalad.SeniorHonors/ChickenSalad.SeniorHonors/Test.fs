@@ -115,6 +115,11 @@ let testCrossJoin() =
     let expectedAST = (FromJoins[(("", "dbo", "Test"), JoinType.CrossJoin, ("", "dbo", "Test2"), ("", ""))], [], [], [])
     testParse protoSql expectedAST
 
+let testMultiColumns() =
+    let protoSql = "[database].[schema].[table]?[schema].[table].[column] = 42"
+    let expectedAST = (FromTable("database", "schema", "table"), [ValueExprBinaryOperator("=", ValueExprPrimative(PrimativeLiteral "[schema].[table].[column]"), ValueExprPrimative(PrimativeInt 42))], [], [])
+    testParse protoSql expectedAST
+
 let testSimpleBitOfEverything() =
     let protoSql = "dbo.Foo?5//x{y}"
     let expectedAST = (FromTable("", "dbo", "Foo"), [ValueExprPrimative(PrimativeInt 5)], [(Ascending,("", "", "x"))], [SelectColumn(("", "", "y"))])
@@ -130,7 +135,8 @@ let test() =
         testMultitudeOfOperators;
         testParenthesisExpression;
         testLikeOperator;
-        testInnerJoin; testOuterJoin; testCrossJoin
+        testInnerJoin; testOuterJoin; testCrossJoin;
+        // ignored testMultiColumns;
         testSimpleBitOfEverything
     ]
 
