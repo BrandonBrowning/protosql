@@ -44,7 +44,7 @@ let readInputLines() =
                 yield! readInputLines' emptyLineStreak'
         }
 
-    readInputLines' 0
+    readInputLines' -1
 
 let rec repl() =
     Console.Write("ProtoSql> ")

@@ -185,5 +185,7 @@ let parseFrom =
     ] <?> "from clause"
 
 protoSqlParserRef := 
-    tuple4 (parseFrom .>> spaces) (parseWheres .>> spaces) (parseOrderBys .>> spaces) (parseSelects .>> spaces)
+    spaces >>.
+        tuple4 (parseFrom .>> spaces) (parseWheres .>> spaces) (parseOrderBys .>> spaces) parseSelects
+        .>> spaces
         .>> eof
