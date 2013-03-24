@@ -170,14 +170,19 @@ let parseJoinArrow =
     <|> stringReturn "-x>" CrossJoin
     <?> "join arrow"
 
-let parseJoinColumns = (parseJoinTwoPiece <|> stringReturn "" ("", "")) <?> "join column list"
+let parseJoinColumns = 
+    choice [
+        parseJoinTwoPiece;
+        stringReturn "" ("", "")
+    ] <?> "join column list"
+
 let parseJoin = tuple4 (parseTable .>> spaces) (parseJoinArrow .>> spaces) (parseTable .>> spaces) parseJoinColumns
 
 let parseFrom =
     choice [
-        parseTable <?> "table name" |>> FromTable
         many parseJoin <?> "join list" |> attempt |>> FromJoins;
-    ]
+        parseTable <?> "table name" |>> FromTable
+    ] <?> "from clause"
 
 protoSqlParserRef := 
     tuple4 (parseFrom .>> spaces) (parseWheres .>> spaces) (parseOrderBys .>> spaces) (parseSelects .>> spaces)
