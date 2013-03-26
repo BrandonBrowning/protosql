@@ -109,5 +109,7 @@ UpgradeLog*.XML
 
 # LaTeX output
 *.aux
+*.out
 *.synctex.gz
+*.toc
 *ProtoSql*.pdf
