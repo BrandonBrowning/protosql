@@ -2,15 +2,15 @@
 \usepackage{lipsum}
 
 \begin{document}
-
 	\title{Exploring Best Practices for the Creation of a Programming Language through ProtoSQL}
 	\author{Brandon Browning}
 	\maketitle
 
 	\begin{abstract}
-	Developing a programming language is a process full of managing many different forms of complexity.  This project is an experiment in managing the problems that may arise in the development of an ecosystem for a new programming language; it is meant to explore and evaluate the best practices through the creation of a full language.  This will result in an industrial-strength and full-featured toolchain, including a parser, optimizer, and compiler.  The parser will adhere to the language grammar, generate descriptive error messages, and supply an Abstract Syntax Tree (AST) to the optimizer.  The optimizer will then go through the tree and rewrite pieces as it sees fit, generally to improve performance.  Then the compiler, here a cross-compiler, will take the AST and output corresponding SQL code.
+		Developing a programming language is a process full of managing many different forms of complexity.  This project is an experiment in managing the problems that may arise in the development of an ecosystem for a new programming language; it is meant to explore and evaluate the best practices through the creation of a full language.  This will result in an industrial-strength and full-featured toolchain, including a parser, optimizer, and compiler.  The parser will adhere to the language grammar, generate descriptive error messages, and supply an Abstract Syntax Tree (AST) to the optimizer.  The optimizer will then go through the tree and rewrite pieces as it sees fit, generally to improve performance.  Then the compiler, here a cross-compiler, will take the AST and output corresponding SQL code.
 	\end{abstract}
 
-	This project started out with a deep curiosity into how languages are defined, and how people manage the tooling around them.  To somebody who is unfamiliar with workings of parsers and compilers, it seems like such an immense and magical process to have code that turns code into code.  It's always a bit magical, but I hope through this paper to show how the field of Computer Science has dealt with the problem, and why it's not as painful as one would think.
+	This project started out with a deep curiosity into how languages are defined, and how people manage the tooling around them.  To somebody who is unfamiliar with workings of parsers and compilers, it seems like such an immense and magical process to have code that turns code into code.  It's always a bit magical, but I hope through this paper to show how the field of Computer Science has dealt with this problem, and why it's not as painful as one would think.
 
+	The first part of the process of the foundation for a new programming language, almost out of necessity, is to develop the syntax and semantics of how the language will function.  Usually there's some kind of problem one would want to solve; such as a new language that sits at an abstraction between two other languages, or something completely different that's alternative to some established standard.  Over time, the strengths and weaknesses of a language begin to show.  The weaknesses are not necessarily oversights by the original designer, but more intricacies that are brought out over time by heavy usage of the language.  Due to this phenomenon, the development of new languages serves an important role in the evolution of software.
 \end{document}
