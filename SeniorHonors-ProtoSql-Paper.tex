@@ -41,9 +41,11 @@
 
 		Languages are usually created because there's some kind of problem one would like to solve; such as wanting to work at an abstraction level between two other languages, or a completely different way of thinking to some established standard.  Over time, the strengths and weaknesses of a language begin to show.  The weaknesses are not necessarily oversights by the original designer, but more intricacies that are brought out over time by heavy usage of the language.  Due to this phenomenon, the development of new languages serves an important role in the evolution of software.
 
-		\subsection{First Steps}
+		\subsection{The Grammar}
 
 			The first part of the process towards the foundation of a new programming language, almost out of necessity, is to develop the syntax and semantics of how the language will function.  There's an already existing domain of problem that the creator wants to solve, so they must think on the constructs used to solve that problem, and how they will fit together.  For example, if somebody wanted to create a language for a hand-held algebra system, they'd have to consider brevity and ease of entry as design goals.  They may opt to limit the feature set and complexity of the language as it's probably aimed at beginners, and the limited input versus a desktop-based system would be a significant factor.  At this point, many of the details aren't known, but the high-level design starts coming in to play which heavily dictates the initial direction of the language.
+
+
 
 		\subsection{The Parser}
 
@@ -140,7 +142,7 @@
 			~\centerline{\includegraphics[scale=.5]{ExampleCompileBinaryAST.png}}
 			\newline
 
-			The compiler could then recursively traverse down the tree.  If it encounters a real number, it will just output it.  If it encounters a binary operator, however, it will recursively output its children, and then the operator name.  This will unfold in the following way:
+			The compiler could then recursively traverse down the tree.  If it encounters a real number, it will just output it.  If it encounters a binary operator, however, it will recursively output its children, and then the operator name.  Here's a listing of how this process would occur:
 			\newline
 
 			Steps
@@ -152,5 +154,13 @@
 				\item $1\ 5\ 3\ /\ +$
 				\newline
 			\end{enumerate}
+
+	\section{Implementation of ProtoSQL}
+
+		ProtoSQL began as a combination of two things; a curiosity into the inner-workings of programming languages, and a desire to find an alternative to SQL.  I've never worked on designing or implementing a language, so it's understandable why I didn't know how programming languages work.  However they're an extremely important part of the ecosystem, and I wanted to explore the way they transform text, make smart decisions, and translate it into another domain.  My desire to explore alternatives to SQL comes from a productivity point-of-view, not necessarily from a disagreement with its design; SQL is an old language, and I thought there'd be some ways to make development with it less painful.  It does, however, do its job very well; it just is quite unwieldy and verbose.
+
+		\subsection{The Grammar}
+
+			
 
 \end{document}
