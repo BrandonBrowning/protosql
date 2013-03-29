@@ -4,7 +4,11 @@
 \usepackage{hyperref}
 \usepackage{indentfirst}
 \usepackage{lipsum}
+\usepackage{listings}
+\usepackage{textcomp}
 \usepackage{xcolor}
+
+\lstset{breaklines=true}
 
 \begin{document}
 
@@ -17,6 +21,8 @@
 		\large{Known Issues}
 		\begin{itemize}
 			\item Adobe renders the 2.2 (The Parser) AST images oddly unless zoomed in.
+			\item Fix code examples so it's still centered but left aligned.
+			\item Should I act like my capstone project code (the optimizer) is a part of this project or not?  I assumed I was told it's essentially invisible to this project.
 		\end{itemize}
 	\vspace*{\fill}
 	\newpage
@@ -157,10 +163,140 @@
 
 	\section{Implementation of ProtoSQL}
 
-		ProtoSQL began as a combination of two things; a curiosity into the inner-workings of programming languages, and a desire to find an alternative to SQL.  I've never worked on designing or implementing a language, so it's understandable why I didn't know how programming languages work.  However they're an extremely important part of the ecosystem, and I wanted to explore the way they transform text, make smart decisions, and translate it into another domain.  My desire to explore alternatives to SQL comes from a productivity point-of-view, not necessarily from a disagreement with its design; SQL is an old language, and I thought there'd be some ways to make development with it less painful.  It does, however, do its job very well; it just is quite unwieldy and verbose.
+		ProtoSQL began as a combination of two things; a curiosity into the inner-workings of programming languages, and a desire to find an alternative to SQL (a database manipulation language).  I've never worked on designing or implementing a language, so it's understandable why I didn't know how programming languages work.  However they're an extremely important part of the ecosystem, and I wanted to explore the way they transform text, make smart decisions, and translate it into another domain.  My desire to explore alternatives to SQL comes from a productivity point-of-view, not necessarily from a disagreement with its design; SQL is an old language, and I thought there'd be some ways to make development with it less painful.  It does, however, do its job very well; it just is quite unwieldy and verbose.
 
 		\subsection{The Grammar}
 
-			
+			My main design goal was a succinct grammar that captured the common use-cases for SQL.  I was mostly targeting the exploratory SQL code written to hunt down problems, the ad-hoc queries that generally aren't usually kept around.  This subset of SQL code I felt was an important target since it always seemed to take excessive time, and it seemed there could be a better system.
+
+			I began work on a grammar that stayed quite consistent throughout the process.  There were quite a few changes, however they were mostly things that were unimportant in the scheme of things, like what characters separate different constructs.  Some early pieces of ProtoSQL that worked successfully include:
+			\newline
+
+			Note: The ProtoSQL code will come after a caret (\textgreater) and a space (this is not necessary in the language itself).  Then the next line is the outputted SQL.
+
+			~\centerline{\textgreater\ SomeTable}
+			~\centerline{SELECT * FROM SomeTable;}
+			\newline
+
+			~\centerline{\textgreater\ SomeTable?id=5}
+			~\centerline{SELECT * FROM SomeTable WHERE id = 5;}
+			\newline
+
+		\subsection{The Parser}
+
+			The parser was the part I was most looking forward to, and in the end the part I thought was most interesting and exciting.  One of my side goals in this project was to work on the F\# programming language, so I chose the parser combinator library FParsec\footnote{Available at \url{http://www.quanttec.com/fparsec/}}, to provide the parsing primitives I'd use to build up my ProtoSQL parser.  This was essentially the standard parsing library for F\#, and it also seemed extremely interesting.
+
+			Creating the initial low-feature parser was quite pleasant.  First I toyed around with the library testing how the different tools work, even creating a quite functional JSON\footnote{According to \url{http://www.json.org/}, `JSON (JavaScript Object Notation) is a lightweight data-interchange format'} parser as a test.  Then I began working on the ProtoSQL parser.  Given my lack of experience with FParsec, I still made a quite usable parser quickly for the initial grammar.  I used this advantage and ease of parser implementation to essentially experiment with my grammar; a luxury I feel may not always arise with other tool-chains.
+
+			As I began advancing to working on the compiler, I sometimes had issues with my parser; however, in the end it was always a simple misunderstanding of myself trying to correctly express my grammar.  For example, with the following piece of code:
+			\newline
+
+			~\centerline{\textgreater\ SomeTable?x=5/y}
+			\newline
+
+			There was an ambiguous case that I did not consider.  I expected the forward slash to not act as division, but instead be an order-by clause.  There is in fact no ambiguity in a language, since the order that the clauses are defined is significant, so the parser logically went with the case that I essentially told it to use, which was to use division.  I felt if this could be confusing to users, let alone me, I should probably use a different sign for the separator for an order-by clause, so I changed it from `/' to `//'.  Therefore, the division case and then the order-by case are respectively:
+			\newline
+
+			~\centerline{\textgreater\ SomeTable?x=5/y}
+			~\centerline{SELECT * FROM SomeTable WHERE x = (5 / y);}
+			\newline
+
+			~\centerline{\textgreater\ SomeTable?x=5//y}
+			~\centerline{SELECT * FROM SomeTable WHERE x = 5 ORDER BY y ASCENDING;}
+			\newline
+
+		\subsection{The Optimizer}
+
+			The optimizer for ProtoSQL is effectively nonexistent for a few reasons.  First of all, SQL is a highly efficient language from the point of view of the user.  As long as the database is configured well, the database will do all the work in making queries efficient.  This is due to the fact in SQL you essentially say \textbf{what} you want, not \textbf{how} you want it.  This makes SQL quite difficult, and futile to optimize.
+
+			Instead of having an optimizer pass, the AST goes from the parser straight to the compiler.
+
+		\subsection{The Compiler}
+
+			To implement the compiler, I didn't use any other libraries or tools.  Essentially it involved smart work with text, and was more of a classical programming problem.  I had the least amount of problems working on the compiler, primarily due to the simplicity of SQL that I had to output.  Also, my AST format encodes all the information required, and the F\# language has many constructs making it easy to inspect the AST and generate the needed SQL code.  The style of my compiler essentially represents the one above in the overview.
+
+	\section{Closing Thoughts}
+
+		I thought this was an extremely exciting project, and am satisfied with the conclusion.  There's a unique feeling when I can enter any valid ProtoSQL code following my grammar, and it's magically transformed into the corresponding SQL I expect.  From here one could work on integrating the compilation system with an existing SQL tool, allowing you to essentially write ProtoSQL instead of SQL when doing ad-hoc database exploration and analysis.
+
+		The code will be available open-source under the MIT license, which allows it to essentially be used for anything, but I am not liable for damages.  See the appendix for additional documents, such as the grammar.
+
+	\section{Appendix}
+
+		\subsection{Grammar Definition in EBNF}
+
+\begin{lstlisting}
+; ProtoSQL - A succinct language that cross-compiles to SQL
+;  for a Senior Honors Project
+;  by Brandon Browning
+
+; Assumed symbols:
+;   <EOF>
+;   <int>
+;   <float>
+;   <sql-string-text> ; For simplicity, the allowed SQL text between single quote (')'s in a string
+;   <newline>
+;   <tab>
+; Note: No strings are escaped; instead the above symbols are used
+
+<proto-sql> ::= 
+	<data-expr> <spacing>
+	<where-clause>? <spacing>
+	<order-by-clause>? <spacing>
+	<select-clause>? <spacing>
+
+<data-expr> ::= <join>+ | <table>
+<join> ::= <table> <spacing> <join-arrow> <spacing> table> <join-tuple>?
+<join-tuple> ::= "(" <spacing> <join-tuple-body> <spacing> ")"
+<join-tuple-body> ::= <bracket-ident> (<spacing> "," <spacing> <bracket-ident>)?
+<join-arrow> ::= "-->" | "-=>" | "-x>"
+
+<where-clause> ::= <where>+v
+<where> ::= "?" (<where-id> | <value-expr>)
+<where-id> ::= <int> | <tuple>
+
+<order-by-clause> ::= <order-by>+
+<order-by> ::= <order-by-type> <opt-spacing> <column> <spacing>
+<order-by-type> ::= "//" | "\\"
+
+<select-clause> ::= ("{" <spacing> <select-body> <spacing> "}")
+<select-body> ::= (<select> <spacing> ";" <spacing>)* <select> <spacing>
+<select> ::= (<ident-or-bracket> <spacing> "=" <spacing>) <value-expr>
+
+<column> ::= <tri-string>
+<table> ::= <tri-string>
+<tri-string> ::= <ident-or-bracket> (<spacing> "." <spacing> <ident-or-bracket>){0,2}
+
+<tuple> ::= "(" <tuple-body> ")"
+<tuple-body> ::= <value-expr> (<spacing> "," <spacing> <value-expr>)* <spacing> ","?
+
+<value-expr> ::= <binary-op> | <f-call> | <primative>
+<primative> ::=  <string> | <int> | <float> | <literal>
+<string> ::= "'" <sql-string-text>  "'"
+<literal> ::= <ident>
+<binary-op> ::= <value-expr> <opt-spacing> <binary-op-name> <opt-spacing> <value-expr>
+<binary-op-name> ::= "&&" | "||" | "<" | "<=" | ">" | ">=" | "~" | "!~" | "=" | "!=" | "%" | "*" | "/" | "+" | "-"
+<f-call> ::= <ident> <tuple>
+
+<spacing> ::= <space-or-newline>?
+<space-or-newline> ::= <space> | <newline>
+<space> ::= " " | <tab>
+
+<ident-or-bracket> ::= <bracket-ident> | <ident>
+
+<bracket-ident> ::= "[" <bracket-ident-part>+ "]"
+<bracket-ident-part> ::= <digit-letter> | <bracket-ident-symbol>
+<bracket-ident-symbol> ::= <space> | "." | "/" | "\"
+
+<ident> ::= <ident-head> <ident-tail>
+<ident-head> ::= "_" | <letter>
+<ident-tail> ::= "" | <digit-letter> <ident-tail>
+
+<digit-letter> ::= <letter> | <digit>
+<digit> ::= "0" | "1" | "2" | ... | "9"
+<letter> ::= <lower-letter> | <upper-letter>
+<lower-letter> ::= "a" | "b" | ... | "z"
+<upper-letter> ::=  "A" | "B" | ... | "Z"
+\end{lstlisting}
 
 \end{document}
