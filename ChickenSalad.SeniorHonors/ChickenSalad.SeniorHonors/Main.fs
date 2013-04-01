@@ -11,6 +11,9 @@ open Optimize
 open Parse
 open Test
 
+[<Literal>]
+let MAX_SEQUENTIAL_EMPTY_REPL_LINES = 1
+
 let runPrint p str =
     let result = run p str
 
@@ -30,7 +33,6 @@ let runPrint p str =
 
     printn ""
 
-let MAX_SEQUENTIAL_EMPTY_REPL_LINES = 1
 let readInputLines() = 
     let rec readInputLines' emptyLineStreak =
         seq {
@@ -55,7 +57,7 @@ let rec repl() =
 
 [<EntryPoint>]
 let main args =
-    let testing = false
+    let testing = true
     if testing then
         test()
     else

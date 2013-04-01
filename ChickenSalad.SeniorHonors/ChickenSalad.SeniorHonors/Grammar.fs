@@ -40,4 +40,5 @@ and Primative =
     | PrimativeFloat of float
     | PrimativeInt of int
     | PrimativeString of string
+    | PrimativeColumn of Column
     | PrimativeLiteral of string

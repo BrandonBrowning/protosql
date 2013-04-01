@@ -8,6 +8,11 @@ open Grammar
 let tabbing = "    "
 let joinLines = sjoin newline
 
+let crossTableOrColumn (a, b, c) =
+    [a; b; c] 
+        |> Seq.filter (not << String.IsNullOrEmpty)
+        |> fun cs -> String.Join(".", cs)
+
 let crossPrimative = function
     | PrimativeInt(i) -> i.ToString()
     | PrimativeFloat(i) -> i.ToString()
@@ -15,6 +20,7 @@ let crossPrimative = function
     | PrimativeBoolean(s) -> match s with
         | true -> "1"
         | false -> "0"
+    | PrimativeColumn(c) -> crossTableOrColumn c
     | PrimativeLiteral(s) ->
         if s = "null" then "NULL" else s
 
@@ -56,12 +62,6 @@ let optionallyBracket (s: string) =
         "[" + s + "]"
     else
         s
-
-let crossTableOrColumn (a, b, c) =
-    [a; b; c] 
-        |> Seq.filter (not << String.IsNullOrEmpty)
-        |> Seq.map optionallyBracket
-        |> fun cs -> String.Join(".", cs)
 
 let crossJoinType = function
     | InnerJoin -> "INNER JOIN"

@@ -21,7 +21,7 @@
 <join> ::= <table> <spacing> <join-arrow> <spacing> table> <join-tuple>?
 <join-tuple> ::= "(" <spacing> <join-tuple-body> <spacing> ")"
 <join-tuple-body> ::= <bracket-ident> (<spacing> "," <spacing> <bracket-ident>)?
-<join-arrow> ::= "-->" | "-=>" | "-x>"
+<join-arrow> ::= "->" | "=>" | "+>"
 
 <where-clause> ::= <where>+v
 <where> ::= "?" (<where-id> | <value-expr>)

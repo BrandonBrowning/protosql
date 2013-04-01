@@ -1,7 +1,10 @@
 ﻿
+// Note: Only for senior capstone project
+
 module Optimize
 
 open System
+open System.Linq
 open System.Text
 open Grammar
 
@@ -81,7 +84,20 @@ let rec optimizeValueExpr expr =
                 expr
         | _ -> expr
 
-let optimizeFrom = id
+
+// NOTE: Progress pending new three-part primative
+(*
+let whereTableReferences where =
+    seq {
+        match where with
+            | ValueExprPrimative(PrimativeLiteral lit) ->
+                if lit.ToCharArray().Count((=) '.')
+    }
+*)
+
+let optimizeFrom (from, wheres, orderBys, selects) =
+    
+    from
 
 let optimizeWhere = optimizeValueExpr
 
@@ -92,8 +108,10 @@ let optimizeSelect line =
         | SelectExpr(ident, valueExpr) -> SelectExpr(ident, optimizeValueExpr valueExpr)
         | _ -> line
 
-let optimize (from, wheres, orderBys, selects) = 
-    let optimizedFrom = optimizeFrom from
+let optimize query = 
+    let from, wheres, orderBys, selects = query
+
+    let optimizedFrom = optimizeFrom query
     let optimizedWheres = List.map optimizeWhere wheres
     let optimizedOrderBy = List.map optimizeOrderBy orderBys
     let optimizedSelect = List.map optimizeSelect selects

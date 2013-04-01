@@ -10,7 +10,15 @@ type Parser = Parser<ProtoSql, unit>
 
 let (protoSqlParser: Parser), protoSqlParserRef = createParserForwardedToRef()
 
-let parseEscapeBlock = chr '[' >>. many1Satisfy ((<>) ']') .>> chr ']'
+let threePieceLength (a, b, c) =
+    [a; b; c]
+        |> List.filter (not << String.IsNullOrEmpty)
+        |> List.length
+
+let parseEscapeBlock = 
+    chr '[' >>. many1Satisfy ((<>) ']') .>> chr ']'
+        |>> fun s -> "[" + s + "]"
+
 let parseRawIdentifier = many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c)
 let parsePiece =  parseEscapeBlock <|> parseRawIdentifier
 let parseThreePiece = 
@@ -54,11 +62,15 @@ let flattenIdentifier (a, b, c) =
         |> Seq.filter (not << String.IsNullOrEmpty)
         |> sjoin "."
 
-let parseLiteral =
+let parseLiteralOrColumn =
     parseThreePiece
-        |>> flattenIdentifier
-        |>> PrimativeLiteral
         <?> "literal"
+        |>> fun triple ->
+            if threePieceLength triple = 1 then
+                let _, _, literal = triple
+                PrimativeLiteral literal
+            else
+                PrimativeColumn triple
 
 let parseRawString = pchar ''' >>. manySatisfy (fun c -> c <> ''') .>> pchar '''
 let parseRawInteger = pint32
@@ -78,7 +90,7 @@ let parsePrimative =
         parseString;
         parseNumber;
         parseBoolean;
-        parseLiteral
+        parseLiteralOrColumn
     ] <?> "primative"
 
 let parseValueExprInternal, parseValueExprInternalRef = createParserForwardedToRef()
@@ -165,9 +177,9 @@ let parseSelects =
         <?> "select clause"
 
 let parseJoinArrow = 
-    stringReturn "-->" InnerJoin
-    <|> stringReturn "-=>" OuterJoin
-    <|> stringReturn "-x>" CrossJoin
+    stringReturn "->" InnerJoin
+    <|> stringReturn "=>" OuterJoin
+    <|> stringReturn "+>" CrossJoin
     <?> "join arrow"
 
 let parseJoinColumns = 
