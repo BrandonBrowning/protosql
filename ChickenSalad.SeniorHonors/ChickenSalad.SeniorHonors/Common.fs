@@ -19,29 +19,37 @@ let seperate sep p = sepBy p sep
 
 let betweenChr cOpen cClose p = between (chr cOpen) (chr cClose) p
 let betweenStr sOpen sClose p = between (str sOpen) (str sClose) p
-let csv p = sepBy (p .>> spaces) (str "," .>> spaces)
+let csv p = sepBy (p .>> spaces) (chr ',' .>> spaces)
 
 let sepByTrail (psep: Parser<_, _>) (p: Parser<'a, _>) =
-    fun s ->
-        let results = new List<'a>()
+    fun (s: CharStream<_>) ->
+        let initialState = s.State
 
         let mutable reply = p s
-        let mutable state = s.State
         let mutable good = reply.Status = Ok
-        
-        while good do
+
+        if not good then
+            s.BacktrackTo(initialState)
+            Reply(List.empty)
+        else
+            let results = new List<'a>()
             results.Add(reply.Result)
-            state <- s.State
 
-            let replySep = psep s
-            if replySep.Status = Ok then
-                reply <- p s
-                good <- reply.Status = Ok
-            else
-                good <- false
-                s.BacktrackTo(state)
+            while good do
+                let loopState = s.State
+                let seperator_reply = psep s
 
-        Reply(List.ofSeq results)
+                if seperator_reply.Status = Ok then
+                    let p_reply = p s
+                    if p_reply.Status = Ok then
+                        results.Add(p_reply.Result)
+                    else
+                        good <- false
+                else
+                    good <- false
+                    s.BacktrackTo(loopState)
+
+            Reply(List.ofSeq results)
 
 let id x = x
 let printn (str: string) = printfn "%s" str
