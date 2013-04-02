@@ -17,22 +17,23 @@
 	<order-by-clause>? <spacing>
 	<select-clause>? <spacing>
 
-<data-expr> ::= <join>+ | <table>
-<join> ::= <table> <spacing> <join-arrow> <spacing> table> <join-tuple>?
+<data-expr> ::= <joins> | <table>
+<joins> ::= <join> (<spacing> <join>)*
+<join> ::= <table> <spacing> <join-arrow> <spacing> <table> <spacing> <join-tuple>?
 <join-tuple> ::= "(" <spacing> <join-tuple-body> <spacing> ")"
 <join-tuple-body> ::= <bracket-ident> (<spacing> "," <spacing> <bracket-ident>)?
 <join-arrow> ::= "->" | "=>" | "+>"
 
-<where-clause> ::= <where>+v
-<where> ::= "?" (<where-id> | <value-expr>)
-<where-id> ::= <int> | <tuple>
+<where-clause> ::= <where> (<spacing> <where>)*
+<where> ::= "?" <spacing> (<where-id> | <value-expr>)
+<where-id> ::= <tuple> | <int>
 
-<order-by-clause> ::= <order-by>+
-<order-by> ::= <order-by-type> <opt-spacing> <column> <spacing>
+<order-by-clause> ::= <order-by> (<spacing> <order-by>)*
+<order-by> ::= <order-by-type> <opt-spacing> <column>
 <order-by-type> ::= "//" | "\\"
 
-<select-clause> ::= ("{" <spacing> <select-body> <spacing> "}")
-<select-body> ::= (<select> <spacing> ";" <spacing>)* <select> <spacing>
+<select-clause> ::= "{" <spacing> <select-body> <spacing> "}"
+<select-body> ::= (<select> <spacing> ";" <spacing>)* <select> <spacing> ";"?
 <select> ::= (<ident-or-bracket> <spacing> "=" <spacing>) <value-expr>
 
 <column> ::= <tri-string>

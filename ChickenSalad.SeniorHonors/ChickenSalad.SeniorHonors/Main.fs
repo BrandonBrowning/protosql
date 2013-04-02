@@ -57,11 +57,8 @@ let rec repl() =
 
 [<EntryPoint>]
 let main args =
-    let testing = true
-    if testing then
-        test()
-    else
-        repl()
+    test()
+    repl()
 
     Console.ReadLine() |> ignore
     0

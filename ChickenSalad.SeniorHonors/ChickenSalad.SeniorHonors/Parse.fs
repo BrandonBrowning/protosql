@@ -152,7 +152,11 @@ let parseWheres =
 let parseTable = parseThreePiece
 let parseColumn = parseThreePiece
 
-let parseOrderByColumnType = (stringReturn @"//" Ascending) <|> (stringReturn @"\\" Descending) <?> "order-by type"
+let parseOrderByColumnType =
+    stringReturn @"//" Ascending
+        <|> stringReturn @"\\" Descending
+    <?> "order-by type"
+
 let parseOrderBy = (parseOrderByColumnType .>> spaces) .>>. parseColumn
 let parseOrderBys = 
     parseOrderBy .>> spaces
@@ -168,7 +172,8 @@ let parseSelect =
 
 let parseSelects = 
     parseSelect
-        |> seperate (chr ';' .>> spaces)
+        |> sepByTrail (chr ';' .>> spaces)
+        .>> opt (chr ';')
         |> between (chr '{' .>> spaces) (spaces >>. chr '}')
         |> opt
         |>> function
