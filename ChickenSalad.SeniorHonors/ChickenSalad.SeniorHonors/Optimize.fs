@@ -79,25 +79,78 @@ let rec optimizeValueExpr expr =
                             Option.get result |> ValueExprPrimative
                         else
                             ValueExprBinaryOperator(ident, optimizedLeft, optimizedRight)
-                    | _ -> ValueExprBinaryOperator(ident, optimizedLeft, optimizedRight)
+                    | _ ->
+                        ValueExprBinaryOperator(ident, optimizedLeft, optimizedRight)
             else
                 expr
-        | _ -> expr
+        | _ ->
+            expr
 
-
-// NOTE: Progress pending new three-part primative
 (*
-let whereTableReferences where =
+// NOTE: Progress pending new three-part primative
+// NOTE: If you eliminate the only join clause, the left table should remain as FROM
+let rec valueExprColumnReferences valueExpr =
     seq {
-        match where with
-            | ValueExprPrimative(PrimativeLiteral lit) ->
-                if lit.ToCharArray().Count((=) '.')
+        match valueExpr with
+            | ValueExprPrimative(PrimativeColumn col) ->
+                yield col
+            | ValueExprBinaryOperator(op, l, r) ->
+                yield! valueExprColumnReferences l
+                yield! valueExprColumnReferences r
+            | ValueExprFunctionCall(f, args) ->
+                yield! args |> Seq.map valueExprColumnReferences |> Seq.concat
+            | _ -> ignore ()
     }
+
+let whereColumnReferences = valueExprColumnReferences
+let orderByColumnReferences = snd
+let selectColumnReferences select =
+    seq {
+        match select with
+            | SelectColumn col -> yield col
+            | SelectExpr(_, expr) -> yield! valueExprColumnReferences expr
+    }
+
+let columnTableReferences columnReferences =
+    seq {
+        for (_, table, _) in columnReferences do
+            yield table
+    } |> Seq.filter (not << String.IsNullOrEmpty)
+
+let filterFromClause columnReferences fromClause =
+        match fromClause with
+            | FromJoins(joins) ->
+                let remainingJoins = 
+                    seq {
+                        let colTableRefs = columnTableReferences columnReferences
+
+                        for join in joins do
+                            let fromTable, joinType, toTable, columns = join
+                            let _, targetTable, _ = toTable
+                            if Seq.exists ((=) targetTable) colTableRefs then
+                                yield join
+                    } |> List.ofSeq
+
+                if remainingJoins.Length = 0 then
+                    
+                else
+                    FromJoins(remainingJoins)
+            | x -> x
+
+let queryColumnReferences (from, wheres, orderBys, selects) =
+    seq {
+        yield! Seq.map whereColumnReferences wheres |> Seq.concat
+        yield! Seq.map orderByColumnReferences orderBys
+        yield! Seq.map selectColumnReferences selects |> Seq.concat
+    }
+
+let optimizeFrom query =
+    let from, wheres, orderBys, selects = query
+
+    filterFromClause (queryColumnReferences query) from
 *)
 
-let optimizeFrom (from, wheres, orderBys, selects) =
-    
-    from
+let optimizeFrom (from, wheres, orderBys, selects) = from 
 
 let optimizeWhere = optimizeValueExpr
 

@@ -1,12 +1,10 @@
 ﻿
-module Main
-
 open System
-open System.Collections.Generic
+open System.IO
+open System.Linq
 open Common
 open Cross
 open FParsec
-open Grammar
 open Optimize
 open Parse
 open Test
@@ -59,10 +57,25 @@ let rec repl() =
     runPrint protoSqlParser query
     repl()
 
-[<EntryPoint>]
-let main args =
-    test()
-    repl()
+let usage() = "Usage: <executable> [?] [help] [files to convert...]\nTests and a REPL will be run if no arguments\n"
 
-    Console.ReadLine() |> ignore
+[<EntryPoint>]
+let main args = 
+    if args.Length = 0 then
+        test()
+        repl()
+    else if args.Any(fun arg -> let arg' = arg.ToLower() in arg' = "?" || arg' = "help") then
+        usage() |> printn
+    else
+        for path in args do
+            let text = File.ReadAllText(path)
+
+            let parseResult = run protoSqlParser text
+            match parseResult with
+                | Success(ast, _, _) ->
+                    let sql = ast |> optimize |> cross
+                    let path' = Path.ChangeExtension(path, "sql")
+                    File.WriteAllText(path', sql)
+                | Failure(error, _, _) ->
+                    printfn "Failure: %s" error
     0

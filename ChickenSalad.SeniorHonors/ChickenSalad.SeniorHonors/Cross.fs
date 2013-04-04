@@ -11,18 +11,15 @@ let joinLines = sjoin newline
 let crossTableOrColumn (a, b, c) =
     [a; b; c] 
         |> Seq.filter (not << String.IsNullOrEmpty)
-        |> fun cs -> String.Join(".", cs)
+        |> sjoin "."
 
 let crossPrimative = function
-    | PrimativeInt(i) -> i.ToString()
-    | PrimativeFloat(i) -> i.ToString()
-    | PrimativeString(s) -> sprintf "'%s'" s
-    | PrimativeBoolean(s) -> match s with
-        | true -> "1"
-        | false -> "0"
+    | PrimativeInt(i) -> string i
+    | PrimativeFloat(f) -> string f
+    | PrimativeString(s) -> "'" + s + "'"
+    | PrimativeBoolean(b) -> if b then "1" else "0"
     | PrimativeColumn(c) -> crossTableOrColumn c
-    | PrimativeLiteral(s) ->
-        if s = "null" then "NULL" else s
+    | PrimativeLiteral(l) -> if l = "null" then "NULL" else l
 
 let isOperator = function
     | ValueExprBinaryOperator(_, _, _) -> true
@@ -68,17 +65,6 @@ let crossJoinType = function
     | OuterJoin -> "OUTER JOIN"
     | CrossJoin -> "CROSS JOIN"
 
-let lastTableName = function
-    | ("", "", name) -> name
-    | ("", _, name)  -> name
-    | (_, _, name)   -> name
-
-let generateJoinCriteria toTable columns =
-    match columns with
-        | ("", "")      -> let column = lastTableName toTable + "ID" in (column, column)
-        | (fromCol, "") -> (fromCol, fromCol)
-        | cols          -> cols
-
 let crossJoin (fromTable, joinType, toTable, columns) =
     match joinType with
         | CrossJoin ->
@@ -119,8 +105,8 @@ let crossSelect select =
 
 let crossOrderBy orderby =
     let crossOrderByType = function 
-        | Ascending -> "ASCENDING"
-        | Descending -> "DESCENDING"
+        | Ascending -> "ASC"
+        | Descending -> "DESC"
 
     let crossOrderByColumn (typ, col) =
         crossTableOrColumn col + " " + crossOrderByType typ

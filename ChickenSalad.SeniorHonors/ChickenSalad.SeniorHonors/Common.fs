@@ -51,6 +51,17 @@ let sepByTrail (psep: Parser<_, _>) (p: Parser<'a, _>) =
 
             Reply(List.ofSeq results)
 
+let lastTableName = function
+    | ("", "", name) -> name
+    | ("", _, name)  -> name
+    | (_, _, name)   -> name
+
+let generateJoinCriteria toTable columns =
+    match columns with
+        | ("", "")      -> let column = lastTableName toTable + "ID" in (column, column)
+        | (fromCol, "") -> (fromCol, fromCol)
+        | cols          -> cols
+
 let id x = x
 let printn (str: string) = printfn "%s" str
 let eprintn (str: string) = eprintfn "%s" str
