@@ -125,4 +125,4 @@ let cross (from, where, orderBy, select): string =
         (if empty orderBy then "" else crossOrderBy orderBy)
     ]
         |> Seq.filter (not << String.IsNullOrEmpty)
-        |> fun parts -> String.Join(newline, parts)
+        |> fun parts -> String.Join(newline, parts) + ";"
