@@ -82,7 +82,9 @@ let rec optimizeValueExpr expr =
                     | _ ->
                         ValueExprBinaryOperator(ident, optimizedLeft, optimizedRight)
             else
-                expr
+                ValueExprBinaryOperator(ident, optimizeValueExpr leftExpr, optimizeValueExpr rightExpr)
+        | ValueExprFunctionCall(ident, args) ->
+            ValueExprFunctionCall(ident, List.map optimizeValueExpr args)
         | _ ->
             expr
 

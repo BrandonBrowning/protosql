@@ -120,10 +120,10 @@ addInfixOperator "!~" 10 Associativity.Left
 addInfixOperator "=" 10 Associativity.Left
 addInfixOperator "!=" 40 Associativity.Left
 addInfixOperator "%" 10 Associativity.Left
-addInfixOperator "*" 10 Associativity.Left
-addInfixOperator "/" 10 Associativity.Left
 addInfixOperator "+" 20 Associativity.Left
 addInfixOperator "-" 20 Associativity.Left
+addInfixOperator "*" 30 Associativity.Left
+addInfixOperator "/" 30 Associativity.Left
 
 let parseFunctionCall = 
     parseRawIdentifier .>>. (betweenChr '(' ')' <| csv parseValueExpr)
