@@ -47,12 +47,12 @@
 	\newpage
 
 	\thispagestyle{empty}
-	\title{Exploring Best Practices for the Creation of a Programming Language Ecosystem: A Case Study with ProtoSQL}
+	\title{Exploring Best Practices for the Creation of a Programming Language Compilation System: A Case Study with ProtoSQL}
 	\author{Brandon Browning}
 	\maketitle
 
 	\begin{abstract}
-		Developing a programming language is a process full of managing many different forms of complexity.  This project is an experiment in managing the problems that may arise in the development of an ecosystem for a new programming language; it is meant to explore and evaluate the best practices through the creation of a full language.  This will result in an industrial-strength and full-featured tool chain, including a parser, optimizer, and compiler.  The parser will adhere to the language grammar, generate descriptive error messages, and supply an Abstract Syntax Tree (AST) to the optimizer.  The optimizer will then go through the tree and rewrite pieces as it sees fit, generally to improve performance.  Then the compiler, here a cross-compiler, will take the AST and output corresponding SQL code.
+		Developing a programming language is a process full of managing many different forms of complexity.  This project is an experiment in managing the problems that may arise in the development of a compilation system for a new programming language; it is meant to explore and evaluate the best practices through the creation of a full language.  This will result in an industrial-strength and full-featured tool chain, including a parser, optimizer, and compiler.  The parser will adhere to the language grammar, generate descriptive error messages, and supply an Abstract Syntax Tree (AST) to the optimizer.  The optimizer will then go through the tree and rewrite pieces as it sees fit, generally to improve performance.  Then the compiler, here a cross-compiler, will take the AST and output corresponding SQL code.
 
 	\end{abstract}
 
@@ -82,7 +82,7 @@
 
 		\subsection{The Parser}
 
-			Usually the first part of a new programming language ecosystem to be implemented is the parser.  The construction of a parser helps solidify the correctness of the grammar, lets you start working on and provides a basis for the compiler, and helps iron out and explore the grammar.  If the language hasn't been carefully scoured over before work on the parser begins, then problems in the grammar naturally surface during work on the parser.
+			Usually the first part of a new programming language compilation system to be implemented is the parser.  The construction of a parser helps solidify the correctness of the grammar, lets you start working on and provides a basis for the compiler, and helps iron out and explore the grammar.  If the language hasn't been carefully scoured over before work on the parser begins, then problems in the grammar naturally surface during work on the parser.
 
 			Now what exactly does the parser do?  The parser is the engine that turns the source text, or the source material for the entire process, into a structure fed through the rest of the system until completion; this structure is known as an Abstract Syntax Tree (AST).  The AST is a representation of the grammar in the form of a manipulatable data structure.  The primary purpose of the parser is then to turn the source text into its corresponding AST.
 
